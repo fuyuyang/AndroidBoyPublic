@@ -498,6 +498,14 @@ class ViewOutlookDetector(QWidget, Ui_Form):
                 "can't join meeting(31016)",
                 "join meeting"
             ],
+            "errorNo=31010": [
+                "can't join meeting(31010)",
+                "join meeting"
+            ],
+            "errorNo=31202": [
+                "can't join meeting(31202)",
+                "join meeting"
+            ],
             "errorNo=500000": [
                 "can't join meeting(500000)",
                 "join meeting"

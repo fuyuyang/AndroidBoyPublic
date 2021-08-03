@@ -4,15 +4,45 @@
       "<debug_pd>",
       "do_send_data_request",
       "e2ee",
-      "ModernizeE2EE"
+      "ModernizeE2EE",
+      "65002",
+      "hybridc",
+      "hybrid",
+      "audiomo",
+      "3100",
+      "videoclientwme",
+      "hybridclient",
+      "hybridsess",
+      "audiomodel",
+      "6500",
+      "errord",
+      "startvoip"
     ],
     "enableADBCommandsView": false,
     "enableLogcatView": false,
     "enableOutlookDetector": true,
-    "winGeometry": "AdnQywADAAAAAAEtAAAAZAAABSwAAAN/AAABLQAAAIAAAAUsAAADfwAAAAAAAAAABpAAAAEtAAAAgAAABSwAAAN/"
+    "startSelectDir": "/Users/jeriyang/cctg-android/tools/ubuntu/dump/crash",
+    "winGeometry": "AdnQywADAAAAAAAAAAAAGQAABo8AAAPeAAAAAAAAADUAAAaPAAAD3wAAAAACAAAABpAAAAAAAAAANQAABo8AAAPe"
+  },
+  "CCTGDownloader": {
+    "cctgToken": "Basic amVyaXlhbmc6d2h5ZnRBcEAwMjEy"
+  },
+  "DialogLogin": {
+    "Login CCTG": [
+      "jeriyang",
+      "",
+      true
+    ]
+  },
+  "DialogMailDetail": {
+    "winGeometry": "AdnQywADAAAAAAAAAAAAGQAABo8AAAPeAAAAAAAAADUAAAaPAAAD3gAAAAACAAAABpAAAAAAAAAANQAABo8AAAPe"
   },
   "MailAnalyzer": {
     "recheck error": false
+  },
+  "ViewDumpFile": {
+    "startSelectDir": "",
+    "symbolFolder": "/Users/jeriyang/PycharmProjects/AndroidBoyPublic/src/Application/Assets/WebexSymbols/41.6.2.241062155/arm64-v8a"
   },
   "ViewLogcat": {
     "ColsVisual": [
@@ -41,8 +71,8 @@
     "colWidths": [
       296,
       127,
-      147,
-      741
+      222,
+      1092
     ],
     "errorDefinition": {
       "OCSP response has expired": [
@@ -65,6 +95,10 @@
         "can't join meeting(31002)",
         "join meeting"
       ],
+      "errorNo=31010": [
+        "can't join meeting(31010)",
+        "join meeting"
+      ],
       "errorNo=31016": [
         "can't join meeting(31016)",
         "join meeting"
@@ -79,7 +113,7 @@
       ]
     },
     "filterDays": 3,
-    "filterFolderName": "Tickets",
+    "filterFolderName": "logserver",
     "filterToName": "webex-android-support(mailer list)"
   },
   "ViewWBXTraceFile": {

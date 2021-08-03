@@ -100,6 +100,10 @@ class EmailItem:
         FileUtility.makeFolder(self.mLocalFolder)
 
         self.mAttachments = self._saveAttachments(emailObject)
+
+        if self.mID is None:
+            self.mID = localFolder
+
         return
 
     def _saveAttachments(self, emailObject) -> [str]:
@@ -294,7 +298,7 @@ class OutlookCtrl:
         if len(emailsFromCache) == 0:
             emailsFromCache = []
         # second, read new record via applescript
-        emailsFromAS = [] # self._queryMailsViaAppleScript(emailFilter)
+        emailsFromAS = self._queryMailsViaAppleScript(emailFilter)
         Logger.i(appModel.getAppTag(), f"emailsFromAS={len(emailsFromAS)}")
         # merge them
         emails = emailsFromAS + emailsFromCache

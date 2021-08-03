@@ -12,7 +12,7 @@ tell application "Microsoft Outlook"
 		set _account to the first exchange account
 	end if
 	set _inbox to inbox of _account
-	set _folders to every folder of container of _inbox
+	set _folders to every folder of on my computer
 	
 	set _dictSubFolders to {}
 	set end of _dictFolders to {_id:_account's name, _name:_account's name, _folders:_dictSubFolders}

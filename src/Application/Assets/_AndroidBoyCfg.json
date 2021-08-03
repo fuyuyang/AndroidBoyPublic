@@ -78,7 +78,7 @@
       ]
     },
     "filterDays": 3,
-    "filterFolderName": "Tickets",
+    "filterFolderName": "logserver",
     "filterToName": "webex-android-support(mailer list)"
   },
   "ViewWBXTraceFile": {

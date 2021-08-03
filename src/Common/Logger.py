@@ -41,7 +41,7 @@ class Logger:
     if Const.isDebugMode:
         sShowLogLevel = LoggerLevel.Verbose
     else:
-        sShowLogLevel = LoggerLevel.Info
+        sShowLogLevel = LoggerLevel.Verbose
     getLoggerColor = {
         LoggerLevel.Verbose: colorama.Fore.BLACK,
         LoggerLevel.Debug: colorama.Fore.LIGHTBLACK_EX,

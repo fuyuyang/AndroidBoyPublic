@@ -305,15 +305,33 @@ class DialogMailDetail(QDialog, Ui_Dialog):
                 fileName = path.split("?")[1]
             else:
                 fileName = os.path.basename(path)
+
+            Logger.i(appModel.getAppTag(), f"_onDoubleClickError file {fileName}")
+            bNeedOpen =  re.search(r".wbt$", fileName, flags=re.IGNORECASE)
+            fileName = path.split("?")[1]
             for i in range(0, self.tabAttachments.count()):
                 tabTitle = self.tabAttachments.tabText(i)
                 if fileName == tabTitle:
                     view = self.tabAttachments.widget(i)
                     self.tabAttachments.setCurrentWidget(view)
+                    bNeedOpen = False
                     break
+
+            if bNeedOpen:
+                Logger.i(appModel.getAppTag(), f"will open: {fileName}")
+                zipName = path.split("?")[0]
+                zipFile = zipfile.ZipFile(zipName)
+                fileData = zipFile.read(fileName)
+                view = ViewWBXTraceFile(self)
+                view.openTraceData(fileData, view.DATA_WBT)
+                tabCount = self.tabAttachments.count()
+                title = fileName
+                self.tabAttachments.setCurrentIndex(
+                    self.tabAttachments.insertTab(tabCount, view, title))
         return
 
     def _openAttachment(self, path):
+        Logger.i(appModel.getAppTag(), f"_openAttachment: {path}")
         if self.mAnalyzer is None:
             Logger.e(appModel.getAppTag(), "email.mAnalyzer is None")
             return
