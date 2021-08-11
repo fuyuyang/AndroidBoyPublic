@@ -14,6 +14,9 @@ from src.Common.UITheme import uiTheme
 from src.Model.AppModel import appModel
 
 
+# openssl s_client -connect www.google.com:443
+# nm -gU something.dylib
+
 class ViewADBCommands(QWidget, Ui_Form):
     _mEventConnectState = QtCore.pyqtSignal(int)
     StateDisconnected = 0
@@ -50,6 +53,7 @@ class ViewADBCommands(QWidget, Ui_Form):
         Logger.i(appModel.getAppTag(), "{event}")
         self._mADBCommands.close()
         self._mUpdateTimer.stop()
+        ListForQLineEdit.closeInstance()
         return
 
     def _bindEvent(self):

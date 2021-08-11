@@ -317,6 +317,7 @@ class WidgetTracerList(QWidget, Ui_Form):
     def closeEvent(self, event):
         Logger.i(appModel.getAppTag(), "{event}")
         appModel.saveConfig(self._mConfigName, "ColsVisual", self._mColsVisual)
+        ListForQLineEdit.closeInstance()
         return
 
     def clearLog(self, clearLines=True):
@@ -438,7 +439,7 @@ class WidgetTracerList(QWidget, Ui_Form):
         appModel.addRecentInput(findMsg)
         if self.ckWords.checkState() == Qt.Checked:
             findMsg = r"\b" + findMsg + r"\b"
-        if self.ckCase.checkState() == Qt.Checked:
+        if self.ckCase.checkState() != Qt.Checked:
             findFlag = re.IGNORECASE
         if reverse:
             startFind = self.listTrace.count() - 1
@@ -476,7 +477,7 @@ class WidgetTracerList(QWidget, Ui_Form):
         appModel.addRecentInput(findMsg)
         if self.ckWords.checkState() == Qt.Checked:
             findMsg = r"\b" + findMsg + r"\b"
-        if self.ckCase.checkState() == Qt.Checked:
+        if self.ckCase.checkState() != Qt.Checked:
             findFlag = re.IGNORECASE
         if reverse:
             startFind = 0

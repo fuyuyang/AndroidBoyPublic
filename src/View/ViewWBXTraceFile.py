@@ -49,10 +49,10 @@ class ViewWBXTraceFile(QWidget, Ui_Form):
         return
 
     def closeEvent(self, event):
-        Logger.i(appModel.getAppTag(), "{event}")
+        Logger.i(appModel.getAppTag(), "")
         self._stopReadTracesThread()
         self._mTracerWidget.closeEvent(event)
-        ListForQLineEdit.getInstance().closeEvent(event)
+        ListForQLineEdit.closeInstance()
         return
 
     def resizeEvent(self, QResizeEvent):
@@ -142,7 +142,7 @@ class ViewWBXTraceFile(QWidget, Ui_Form):
 
     def _onEditorTextChanged(self, newText):
         inputList = appModel.getRecentInputList(newText)
-        Logger.i(appModel.getAppTag(), f"newText={newText}, inputList={inputList} ")
+        Logger.i(appModel.getAppTag(), f"newText={newText}, inputList={inputList}")
         ListForQLineEdit.getInstance().showList(inputList, self.editFilter)
         return
 

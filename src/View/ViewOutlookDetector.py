@@ -161,7 +161,7 @@ class ViewOutlookDetector(QWidget, Ui_Form):
         return
 
     def closeEvent(self, event):
-        Logger.i(appModel.getAppTag(), "{event}")
+        Logger.i(appModel.getAppTag(), "")
         colWidths = []
         for i in range(0, 4):
             colWidths.append(self.treeOutlook.columnWidth(i))
@@ -478,16 +478,34 @@ class ViewOutlookDetector(QWidget, Ui_Form):
                 "certificate expired",
                 "certificate"
             ],
-            "cmResult = 65002": [
+            "aReason=31000021": [
+                "no audio(31000021)",
+                "audio"
+            ],
+            "processJoinMeetingCommand, success=false": [
+                "can't join meeting(processJoinMeetingCommand failure)",
+                "join meeting"
+            ],
+            "processGlobalSearchCommand, success= false": [
+                "no meeting found(processGlobalSearchCommand failure) -  might captcha",
+                "join meeting"
+            ],
+            "createLicenseDlg": [
+                "join meeting failure (meeting license limit, correct scenario)",
+                "join meeting"
+            ],
+            # same log with processJoinMeetingCommand, success=false, how to handle???
+            "<MsgCode>107</MsgCode><Message>WebExUserIDInactive</Message>": [
+                "account inactive (processJoinMeetingCommand failure) ",
+                "join meeting"
+            ],
+            # NATIVE_WME  [TID:36650][NATIVE_TID:25673][UTIL] MultiMediaDataEncrypt, Decrypt Error this=0x757d185a98
+            "Decrypt Error": [
+                "e2ee decrypt error",
+                "in meeting session not work"
+            ],
+            "cmReason = 65002": [
                 "no audio(65002)",
-                "audio"
-            ],
-            "cmResult = 65005": [
-                "no audio(65005)",
-                "audio"
-            ],
-            "cmResult = 65006": [
-                "no audio(65006)",
                 "audio"
             ],
             "errNo: 31001": [
@@ -518,34 +536,61 @@ class ViewOutlookDetector(QWidget, Ui_Form):
                 "can't turn on mic",
                 "audio"
             ],
-            "Uncaught exception": [
-                "Java exception",
-                "crash"
-            ],
-            "on Native Crash enter!!!": [
-                "Native crash",
-                "crash"
-            ],
-            "CCmConnectorOpenSslT::DoHandshake, SSL_connect() failed": [
-                "can't join mmp (SSL_connect failed)",
-                "audio"
-            ],
-            "showErrorDialog errorNo=": [
-                "can't join meeting(showErrorDialog)",
+            "<MsgCode>133</MsgCode><Message>InvalidPassword</Message>": [
+                "invalid password(processJoinMeetingCommand failure)",
                 "join meeting"
             ],
-            "OCSP_basic_verify:certificate verify error": [
-                "can't join mmp(OCSP)",
-                "audio"
-            ],
-            "startVoIP()": [
-                "startVoIP",
-                "audio"
-            ],
-            "leaveMeeting return:": [
-                "leaveMeeting",
+            "{\"code\":401000,\"message\":\"Need login before access\"}": [
+                "join require login(WbxAppApi failure)",
                 "join meeting"
             ],
+            "{\"code\":403019": [
+                "host account in active(WbxAppApi return response)",
+                "join meeting"
+            ],
+            "{\"code\":404006": [
+                "cannot find the data(WbxAppApi return response)",
+                "join meeting"
+            ],
+            "{\"code\":404003": [
+                "Meeting data not found(WbxAppApi return response)",
+                "join meeting"
+            ],
+            "<MsgCode>118</MsgCode><Message>CanNotJoinNotStartedMeeting</Message>": [
+                "not started yet(processJoinMeetingCommand failure)",
+                "join meeting"
+            ],
+            "<MsgCode>120</MsgCode><Message>UnkownError</Message>": [
+                "unkonwn error(processJoinMeetingCommand failure)",
+                "join meeting"
+            ],
+            "on_conference_join_confirm, ERROR in joining code=53": [
+                "GCC_RESULT_CONFERENCE_NOT_FOUND",
+                "join meeting"
+            ],
+            "SSL_connect timeout with": [
+                "might join meeting",
+                "ssl connect timeout"
+            ],
+            "select fail with 115": [
+                "might join meeting",
+                "socket error"
+            ],
+            "Network is unreachable": [
+                "might join meeting",
+                "Network is unreachable"
+            ],
+            "xmlApiErr2LocalErr Unknown XMLAPI Error:1001": [
+                "xml api error",
+                "xml api error"
+            ],
+            "get reject join message": [
+                "get reject from CB(too many join)",
+                "join meeting"
+            ],
+
+
+
         }
         self.mErrorDefinition = appModel.readConfig(self.__class__.__name__, "errorDefinition", errorDefinition)
 

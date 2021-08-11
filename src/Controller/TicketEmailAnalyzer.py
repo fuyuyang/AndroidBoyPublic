@@ -1,6 +1,8 @@
+import json
 import os
 import re
 import zipfile
+import src.Controller.WBXTraceAnalyzer as WBXAnalyzer
 from enum import Enum
 from typing import Tuple
 
@@ -36,14 +38,17 @@ class MailAnalyzer:
         self.mCustomerData = None
         self.mAnalyzeResult = {}
         self.mErrorDefinition = errorDefinition
-        self._analyzeMail()
+        self.analyzeMail(False)
         return
 
-    def _analyzeMail(self):
+    def analyzeMail(self, recheck: bool = False):
         senderName = self.mMailItem.mSenderName
         Logger.d(appModel.getAppTag(), f"mail={senderName}")
         emailFolder = self.mMailItem.mLocalFolder
-        self._readResult(emailFolder)
+        if recheck:
+            self.mAnalyzeResult = {}
+        else:
+            self._readResult(emailFolder)
         if "BaseInfo" not in self.mAnalyzeResult:
             self._saveBaseInfo(self.mMailItem)
         if "Attachment" not in self.mAnalyzeResult:
@@ -240,9 +245,15 @@ class MailAnalyzer:
             if len(needToCheck) == 0:
                 continue
 
+            WBXAnalyzer.setErrDefine(json.dumps(needToCheck))
             if re.search(r".wbt$", attachPath, flags=re.IGNORECASE):
-                if not WBXTracerFile(attachPath, True).readTraces(self._onCheckErrorInTrace, [needToCheck, attachPath]):
-                    Logger.e(appModel.getAppTag(), f"readTrace from {attachPath} failed")
+                if WBXAnalyzer.isValid():
+                    errDetail = WBXAnalyzer.analyzeFile(attachPath)
+                    self.mAnalyzeResult["KeyError"].update(json.loads(errDetail))
+                else:
+                    tracerFile = WBXTracerFile(attachPath, True)
+                    if not tracerFile.readTraces(self._onCheckErrorInTrace, [needToCheck, attachPath]):
+                        Logger.e(appModel.getAppTag(), f"readTrace from {attachPath} failed")
             elif re.search(r".zip$", attachPath, flags=re.IGNORECASE):
                 if not zipfile.is_zipfile(attachPath):
                     continue
@@ -253,9 +264,13 @@ class MailAnalyzer:
                     if re.search(r".wbt$", subFileName, flags=re.IGNORECASE):
                         fileData = zipFile.read(subFileName)
                         fullSubFileName = f"{attachPath}?{subFileName}"
-                        if not WBXTracerFile(fileData, False).readTraces(
-                                self._onCheckErrorInTrace, [needToCheck, fullSubFileName]):
-                            Logger.e(appModel.getAppTag(), f"readTrace from {fullSubFileName} failed")
+                        if WBXAnalyzer.isValid():
+                            errDetail = WBXAnalyzer.analyzeData(fileData, fullSubFileName)
+                            self.mAnalyzeResult["KeyError"].update(json.loads(errDetail))
+                        else:
+                            if not WBXTracerFile(fileData, False).readTraces(
+                                    self._onCheckErrorInTrace, [needToCheck, fullSubFileName]):
+                                Logger.e(appModel.getAppTag(), f"readTrace from {fullSubFileName} failed")
                     else:
                         continue
         # set no error value as ""
