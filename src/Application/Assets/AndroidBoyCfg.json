@@ -16,13 +16,16 @@
       "audiomodel",
       "6500",
       "errord",
-      "startvoip"
+      "startvoip",
+      "power",
+      "volume",
+      "startv"
     ],
     "enableADBCommandsView": false,
     "enableLogcatView": false,
     "enableOutlookDetector": true,
     "startSelectDir": "/Users/jeriyang/cctg-android/tools/ubuntu/dump/crash",
-    "winGeometry": "AdnQywADAAAAAAAAAAAAGQAABo8AAAPeAAAAAAAAADUAAAaPAAAD3wAAAAACAAAABpAAAAAAAAAANQAABo8AAAPe"
+    "winGeometry": "AdnQywADAAAAAAAAAAAAGQAABo8AAAPfAAAAAAAAADUAAAaPAAAD3wAAAAACAAAABpAAAAAAAAAANQAABo8AAAPf"
   },
   "CCTGDownloader": {
     "cctgToken": "Basic amVyaXlhbmc6d2h5ZnRBcEAwMjEy"
@@ -42,7 +45,7 @@
   },
   "ViewDumpFile": {
     "startSelectDir": "",
-    "symbolFolder": "/Users/jeriyang/PycharmProjects/AndroidBoyPublic/src/Application/Assets/WebexSymbols/41.6.2.241062155/arm64-v8a"
+    "symbolFolder": "/Users/jeriyang/PycharmProjects/AndroidBoyPublic/src/Application/Assets/WebexSymbols/41.6.0.241060494/arm64-v8a"
   },
   "ViewLogcat": {
     "ColsVisual": [
@@ -70,7 +73,7 @@
   "ViewOutlookDetector": {
     "colWidths": [
       296,
-      127,
+      165,
       222,
       1092
     ],

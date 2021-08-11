@@ -90,6 +90,7 @@ class ListForQLineEdit(QListWidget):
         if self._mEditor is not None:
             self._mEditor.removeEventFilter(self)
             self.removeEventFilter(self)
+        ListForQLineEdit._instance = None
 
     def _onSelectItem(self, item: QListWidgetItem):
         if self._mEditor is not None:

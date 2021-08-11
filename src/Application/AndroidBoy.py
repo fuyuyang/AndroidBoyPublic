@@ -242,7 +242,7 @@ class AndroidBoy(QWidget, Ui_Form):
         return
 
     def closeEvent(self, event):
-        Logger.i(appModel.getAppTag(), "")
+        Logger.i(appModel.getAppTag(), "{event}")
         appModel.saveConfig(self.__class__.__name__,
                             "enableLogcatView", self._getViewByType(ViewLogcat.__name__) is not None)
         appModel.saveConfig(self.__class__.__name__,

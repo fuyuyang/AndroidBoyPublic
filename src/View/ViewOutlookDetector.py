@@ -161,7 +161,7 @@ class ViewOutlookDetector(QWidget, Ui_Form):
         return
 
     def closeEvent(self, event):
-        Logger.i(appModel.getAppTag(), "")
+        Logger.i(appModel.getAppTag(), "{event}")
         colWidths = []
         for i in range(0, 4):
             colWidths.append(self.treeOutlook.columnWidth(i))
@@ -478,12 +478,16 @@ class ViewOutlookDetector(QWidget, Ui_Form):
                 "certificate expired",
                 "certificate"
             ],
-            "aReason=31000021": [
-                "no audio(31000021)",
+            "cmResult = 65002": [
+                "no audio(65002)",
                 "audio"
             ],
-            "cmReason = 65002": [
-                "no audio(65002)",
+            "cmResult = 65005": [
+                "no audio(65005)",
+                "audio"
+            ],
+            "cmResult = 65006": [
+                "no audio(65006)",
                 "audio"
             ],
             "errNo: 31001": [
@@ -513,7 +517,35 @@ class ViewOutlookDetector(QWidget, Ui_Form):
             "ret =30028": [
                 "can't turn on mic",
                 "audio"
-            ]
+            ],
+            "Uncaught exception": [
+                "Java exception",
+                "crash"
+            ],
+            "on Native Crash enter!!!": [
+                "Native crash",
+                "crash"
+            ],
+            "CCmConnectorOpenSslT::DoHandshake, SSL_connect() failed": [
+                "can't join mmp (SSL_connect failed)",
+                "audio"
+            ],
+            "showErrorDialog errorNo=": [
+                "can't join meeting(showErrorDialog)",
+                "join meeting"
+            ],
+            "OCSP_basic_verify:certificate verify error": [
+                "can't join mmp(OCSP)",
+                "audio"
+            ],
+            "startVoIP()": [
+                "startVoIP",
+                "audio"
+            ],
+            "leaveMeeting return:": [
+                "leaveMeeting",
+                "join meeting"
+            ],
         }
         self.mErrorDefinition = appModel.readConfig(self.__class__.__name__, "errorDefinition", errorDefinition)
 

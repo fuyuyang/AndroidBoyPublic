@@ -47,7 +47,7 @@ class ViewADBCommands(QWidget, Ui_Form):
         return
 
     def closeEvent(self, event):
-        Logger.i(appModel.getAppTag(), "")
+        Logger.i(appModel.getAppTag(), "{event}")
         self._mADBCommands.close()
         self._mUpdateTimer.stop()
         return

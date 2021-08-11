@@ -54,7 +54,7 @@ class ViewLogcat(QWidget, Ui_Form):
         return
 
     def closeEvent(self, event):
-        Logger.i(appModel.getAppTag(), "")
+        Logger.i(appModel.getAppTag(), "{event}")
         self._mDeviceManager.detectConnect(None)
         self._mDeviceManager.detectProcess("", "", None)
         self._mDeviceManager.finish()

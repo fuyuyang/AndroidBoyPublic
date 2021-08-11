@@ -170,7 +170,7 @@ class WidgetTracerTabview(QWidget, Ui_Form):
         return super(WidgetTracerTabview, self).eventFilter(source, event)
 
     def closeEvent(self, event):
-        Logger.i(appModel.getAppTag(), "")
+        Logger.i(appModel.getAppTag(), "{event}")
         # save to config
         for col in range(0, self.col_max):
             if col != self.col_message:

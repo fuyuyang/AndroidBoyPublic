@@ -45,7 +45,7 @@ class ViewPicture(QWidget, Ui_Form):
         return
 
     def closeEvent(self, event):
-        Logger.i(appModel.getAppTag(), "")
+        Logger.i(appModel.getAppTag(), "{event}")
         return
 
     def resizeEvent(self, QResizeEvent):

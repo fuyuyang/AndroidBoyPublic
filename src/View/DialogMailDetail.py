@@ -18,6 +18,7 @@ from src.Model.AppModel import appModel
 from src.View.ViewDumpFile import ViewDumpFile
 from src.View.ViewPicture import ViewPicture
 from src.View.ViewWBXTraceFile import ViewWBXTraceFile
+from src.Common.QTHelper import ListForQLineEdit
 
 
 class _ErrorTypeInList(IntEnum):
@@ -75,7 +76,8 @@ class DialogMailDetail(QDialog, Ui_Dialog):
         return
 
     def closeEvent(self, event):
-        Logger.i(appModel.getAppTag(), "")
+        Logger.i(appModel.getAppTag(), "{event}")
+        ListForQLineEdit.getInstance().closeEvent(event)
         self._saveSummary()
         self._handleWndPos(False)
         return
@@ -308,7 +310,12 @@ class DialogMailDetail(QDialog, Ui_Dialog):
 
             Logger.i(appModel.getAppTag(), f"_onDoubleClickError file {fileName}")
             bNeedOpen =  re.search(r".wbt$", fileName, flags=re.IGNORECASE)
-            fileName = path.split("?")[1]
+            strTmp:[] = path.split("?")
+            if len(strTmp) > 1:
+                fileName= strTmp[1]
+            else:
+                fileName= path
+
             for i in range(0, self.tabAttachments.count()):
                 tabTitle = self.tabAttachments.tabText(i)
                 if fileName == tabTitle:

@@ -315,7 +315,7 @@ class WidgetTracerList(QWidget, Ui_Form):
         return
 
     def closeEvent(self, event):
-        Logger.i(appModel.getAppTag(), "")
+        Logger.i(appModel.getAppTag(), "{event}")
         appModel.saveConfig(self._mConfigName, "ColsVisual", self._mColsVisual)
         return
 
