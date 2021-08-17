@@ -588,8 +588,34 @@ class ViewOutlookDetector(QWidget, Ui_Form):
                 "get reject from CB(too many join)",
                 "join meeting"
             ],
-
-
+            "Uncaught exception": [
+                "Java exception",
+                "crash"
+            ],
+            "on Native Crash enter!!!": [
+                "Native crash",
+                "crash"
+            ],
+            "CCmConnectorOpenSslT::DoHandshake, SSL_connect() failed": [
+                "can't join mmp (SSL_connect failed)",
+                "audio"
+            ],
+            "showErrorDialog errorNo=": [
+                "can't join meeting(showErrorDialog)",
+                "join meeting"
+            ],
+            "OCSP_basic_verify:certificate verify error": [
+                "can't join mmp(OCSP)",
+                "audio"
+            ],
+            "startVoIP()": [
+                "startVoIP",
+                "audio"
+            ],
+            "leaveMeeting return:": [
+                "leaveMeeting",
+                "join meeting"
+            ]
 
         }
         self.mErrorDefinition = appModel.readConfig(self.__class__.__name__, "errorDefinition", errorDefinition)

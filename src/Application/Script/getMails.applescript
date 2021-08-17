@@ -163,7 +163,7 @@ on generateMailInfo(_message, _dictFolder, _folderID)
 		set _senderAddress to _sender's address
 		
 		-- create temp folder for mail
-		set _mailTmpFolder to my createFolder(my _mailsFolder, _receivedTimeStr & "_" & _senderName & "_" & _senderAddress)
+		set _mailTmpFolder to my createFolder(my _mailsFolder, _receivedTimeStr  & "_" & _senderAddress)
 		
 		set _dictMailInfo to {_id:_mailID, _folderID:_folderID, _subject:_message's subject, _senderName:_senderName, _senderEmail:_senderAddress, _receivedTime:_receivedTimeStr, _body:_message's plain text content}
 		set _dictAttachments to my appendAttachments(_message, _dictMailInfo, _mailTmpFolder)

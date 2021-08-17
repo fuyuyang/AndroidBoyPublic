@@ -19,7 +19,9 @@
       "startvoip",
       "power",
       "volume",
-      "startv"
+      "startv",
+      "30028",
+      "audio"
     ],
     "enableADBCommandsView": false,
     "enableLogcatView": false,
@@ -42,6 +44,10 @@
   },
   "MailAnalyzer": {
     "recheck error": false
+  },
+  "OutlookCtrl": {
+    "OnlyCachedAccounts": false,
+    "OnlyCachedMails": false
   },
   "ViewDumpFile": {
     "startSelectDir": "",
@@ -73,7 +79,7 @@
   "ViewOutlookDetector": {
     "colWidths": [
       296,
-      165,
+      136,
       222,
       1092
     ],
