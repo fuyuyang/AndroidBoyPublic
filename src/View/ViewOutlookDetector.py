@@ -8,8 +8,8 @@ from typing import cast
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QModelIndex
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QWidget, QTreeWidgetItem, QAbstractItemView, QTreeWidgetItemIterator, QMessageBox
+from PyQt5.QtGui import QColor, QContextMenuEvent
+from PyQt5.QtWidgets import QWidget, QTreeWidgetItem, QAbstractItemView, QTreeWidgetItemIterator, QMessageBox, QMenu
 from requests import Response
 
 from src.Common import QTHelper, Const, FileUtility, DateTimeHelper, SystemHelper
@@ -520,14 +520,6 @@ class ViewOutlookDetector(QWidget, Ui_Form):
                 "can't join meeting(31016)",
                 "join meeting"
             ],
-            "errorNo=31010": [
-                "can't join meeting(31010)",
-                "join meeting"
-            ],
-            "errorNo=31202": [
-                "can't join meeting(31202)",
-                "join meeting"
-            ],
             "errorNo=500000": [
                 "can't join meeting(500000)",
                 "join meeting"
@@ -615,7 +607,15 @@ class ViewOutlookDetector(QWidget, Ui_Form):
             "leaveMeeting return:": [
                 "leaveMeeting",
                 "join meeting"
-            ]
+            ],
+            "errorNo=31010": [
+                "can't join meeting(31010)",
+                "join meeting"
+            ],
+            "errorNo=31202": [
+                "can't join meeting(31202)",
+                "join meeting"
+            ],
 
         }
         self.mErrorDefinition = appModel.readConfig(self.__class__.__name__, "errorDefinition", errorDefinition)
@@ -679,4 +679,39 @@ class ViewOutlookDetector(QWidget, Ui_Form):
         return
 
     def _onSelectedItem(self):
+        return
+
+    def contextMenuEvent(self, event: QContextMenuEvent):
+        selItems = self.treeOutlook.selectedItems()
+
+        menu = QMenu()
+        if len(selItems) > 0:
+            recheck = menu.addAction(uiTheme.iconCopy, "Recheck mail")
+            openFolder = menu.addAction(uiTheme.iconFolder, "Open mail folder")
+        else:
+            recheck = None
+            openFolder = None
+        action = menu.exec_(self.mapToGlobal(event.pos()))
+
+        if action is None:
+            return
+        elif action == recheck:
+            procTime = DateTimeHelper.ProcessTime()
+            for item in selItems:
+                itemType = item.data(0, TreeItemRole.itemType.value)
+                if itemType == TreeItemType.email:
+                    itemInfo: TreeItemInfo = item.data(0, TreeItemRole.itemData.value)
+                    email: EmailItem = itemInfo.mData
+                    analyzer = email.mAnalyzer
+                    analyzer.analyzeMail(True)
+            Logger.i(appModel.getAppTag(), f"end recheck, total {len(selItems)} "
+                                           f"in {procTime.getMicroseconds()} seconds ")
+        elif action == openFolder:
+            for item in selItems:
+                itemType = item.data(0, TreeItemRole.itemType.value)
+                if itemType == TreeItemType.email:
+                    itemInfo: TreeItemInfo = item.data(0, TreeItemRole.itemData.value)
+                    email: EmailItem = itemInfo.mData
+                    SystemHelper.openAtExplorer(email.mLocalFolder)
+                    break
         return

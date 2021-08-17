@@ -71,7 +71,7 @@ class TracerLine:
 
 class WidgetTracerList(QWidget, Ui_Form):
     getLevelStr = {
-        LoggerLevel.Verbose: "Verbos",
+        LoggerLevel.Verbose: "Verbose",
         LoggerLevel.Debug: "Debug",
         LoggerLevel.Info: "Info",
         LoggerLevel.Warning: "Warning",
@@ -150,6 +150,8 @@ class WidgetTracerList(QWidget, Ui_Form):
         # self.listTrace.clicked.connect(self._onSelectLogChanged)
         self.listTrace.itemSelectionChanged.connect(self._onSelectLogChanged)
         self.listTrace.doubleClicked.connect(self._onDoubleClickLog)
+
+        self.listImportant.doubleClicked.connect(self._onDoubleClickImportant)
 
         self.btFindNext.clicked.connect(self.nextFind)
         self.btFindPrev.clicked.connect(self.prevFind)
@@ -348,6 +350,14 @@ class WidgetTracerList(QWidget, Ui_Form):
         self._mDetailDlg.show()
         return
 
+    def _onDoubleClickImportant(self, QModelIndex):
+        row = QModelIndex.row()
+        Logger.i(appModel.getAppTag(), f"at {row}")
+        traceRow = self.listImportant.item(row).data(Qt.UserRole)
+
+        self.setSelectRow(traceRow)
+        return
+
     def _onSelectLogChanged(self):
         selItems = self.listTrace.selectedItems()
         if len(selItems) <= 0:
@@ -457,7 +467,7 @@ class WidgetTracerList(QWidget, Ui_Form):
             trace: TracerLine = item.data(Qt.UserRole)
             if trace is None:
                 continue
-            hasFound = re.search(findMsg, trace.getFullText(), flags=findFlag)
+            hasFound = re.search(re.escape(findMsg), trace.getFullText(), flags=findFlag)
             if hasFound is not None:
                 Logger.i(appModel.getAppTag(), f"found: {row}")
                 self.listTrace.scrollToItem(item)  # ensure visuable
@@ -495,7 +505,7 @@ class WidgetTracerList(QWidget, Ui_Form):
             trace: TracerLine = item.data(Qt.UserRole)
             if trace is None:
                 continue
-            hasFound = re.search(findMsg, trace.getFullText(), flags=findFlag)
+            hasFound = re.search(re.escape(findMsg), trace.getFullText(), flags=findFlag)
             if hasFound is not None:
                 Logger.i(appModel.getAppTag(), f"found: {row}")
                 self.listTrace.scrollToItem(item)  # ensure visuable
@@ -623,7 +633,7 @@ class WidgetTracerList(QWidget, Ui_Form):
             Logger.w(appModel.getAppTag(), f"ignore.")
         return
 
-    def beginLoad(self, initCount):
+    def beginLoad(self, initCount: int):
         self._mEventBeginLoad.emit(self, initCount)
         return
 
@@ -639,12 +649,30 @@ class WidgetTracerList(QWidget, Ui_Form):
         if item is not None:
             self.listTrace.scrollToItem(item)  # ensure visuable
             self.listTrace.setCurrentItem(item)
+        else:
+            Logger.w(appModel.getAppTag(), f"setSelectRow: {row} failed")
         return
 
-    def addTrace(self, timeStr: str, pid: str, tid: str, level: LoggerLevel, tag: str, message: str):
+    def getRowItemByLogIndex(self, logIndex: int) -> int:
+        for row in range(0, self.listTrace.count()):
+            item = self.listTrace.item(row)
+            if item is None:
+                continue
+            if item.isHidden():
+                continue
+            trace: TracerLine = item.data(Qt.UserRole)
+            if trace is None:
+                continue
+            if trace.mIndex == logIndex:
+                return row
+        return -1
+
+    def addTrace(self, index: int, timeStr: str, pid: str, tid: str, level: LoggerLevel, tag: str, message: str):
         color = self.getLevelColor.get(level)
         levelStr = self.getLevelStr.get(level)
-        trace = TracerLine(len(self._mAllTraceLines) + 1,
+        if index < 0:
+            index = len(self._mAllTraceLines) + 1
+        trace = TracerLine(index,
                            timeStr, pid, tid, level, levelStr, tag,
                            message, color)
         self._mAllTraceLines.append(trace)
@@ -699,6 +727,12 @@ class WidgetTracerList(QWidget, Ui_Form):
             item.setBackground(uiTheme.colorNormalBackground)
             item.setForeground(trace.mColor)
             self.listTrace.addItem(item)
+            if "Uncaught exception!!!" in trace.mMessage:
+                itemImportant = QListWidgetItem("Uncaught exception")
+                row = self.listTrace.indexFromItem(item).row()
+                itemImportant.setData(Qt.UserRole, row)
+                self.listImportant.addItem(itemImportant)
+
         self._mScrollToDlg.setRange(0, self.listTrace.count())
         if not self._mLoading and self.isAutoScroll():
             self.listTrace.scrollToBottom()
@@ -751,11 +785,8 @@ class WidgetTracerList(QWidget, Ui_Form):
             trace.mVisual = trace.mMarked
             return
         # level or msg
-        hasFound = re.search(self._mFilterLogInclude,
-                             item.text(),
-                             flags=re.IGNORECASE)
-        if hasFound is None \
-                or trace.mLevel < self._mFilterLogLevel:
+        hasFound = self._mFilterLogInclude.lower() in item.text().lower()
+        if not hasFound or trace.mLevel < self._mFilterLogLevel:
             trace.mVisual = False
         else:
             trace.mVisual = True

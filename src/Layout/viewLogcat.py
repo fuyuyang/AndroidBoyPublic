@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/Users/weizlian/Desktop/MyPrj/github-repos/Python/AndroidBoyPublic/src/Layout/viewLogcat.ui'
+# Form implementation generated from reading ui file 'viewLogcat.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -281,6 +281,20 @@ class Ui_Form(object):
         self.btNextMark.setIcon(icon9)
         self.btNextMark.setObjectName("btNextMark")
         self.verticalLayout.addWidget(self.btNextMark)
+        self.btOpenLogFolder = QtWidgets.QPushButton(Form)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.btOpenLogFolder.sizePolicy().hasHeightForWidth())
+        self.btOpenLogFolder.setSizePolicy(sizePolicy)
+        self.btOpenLogFolder.setMinimumSize(QtCore.QSize(28, 24))
+        self.btOpenLogFolder.setMaximumSize(QtCore.QSize(28, 24))
+        self.btOpenLogFolder.setText("")
+        icon10 = QtGui.QIcon()
+        icon10.addPixmap(QtGui.QPixmap(":/icon/icons/folder.svg"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.btOpenLogFolder.setIcon(icon10)
+        self.btOpenLogFolder.setObjectName("btOpenLogFolder")
+        self.verticalLayout.addWidget(self.btOpenLogFolder)
         self.layoutLogcatOperations.addLayout(self.verticalLayout)
         spacerItem7 = QtWidgets.QSpacerItem(0, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.layoutLogcatOperations.addItem(spacerItem7)
@@ -312,4 +326,5 @@ class Ui_Form(object):
         self.btMark.setToolTip(_translate("Form", "Mark the log"))
         self.btPrevMark.setToolTip(_translate("Form", "Prev marked"))
         self.btNextMark.setToolTip(_translate("Form", "Next marked"))
+        self.btOpenLogFolder.setToolTip(_translate("Form", "Open default log file folder"))
 import AndroidBoy_rc

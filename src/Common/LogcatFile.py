@@ -19,7 +19,8 @@ class LogcatItem:
         'S': LoggerLevel.Silent
     }
 
-    def __init__(self, date: float, pid: str, tid: str, package: str, level: str, tag: str, msg: str):
+    def __init__(self, index: int, date: float, pid: str, tid: str, package: str, level: str, tag: str, msg: str):
+        self.mIndex = index
         self.mDate = date
         self.mPID = pid
         self.mTID = tid
@@ -27,6 +28,7 @@ class LogcatItem:
         self.mLevel = level
         self.mTag = tag
         self.mMessage = msg
+        return
 
     def getDateTimeStr(self) -> str:
         return DateTimeHelper.getTimestampString(self.mDate, None)
@@ -52,7 +54,7 @@ class LogcatFile:
     regPID_TID2 = r"\d{0,}\s{1,}\d{0,}"
     regPackageName = r"[A-Za-z]\S{0,}"
     regLevel = r"(V|D|I|W|E)"
-    regLevel2 = r"(Verbos|Debug|Info|Warning|Error|Fatal|Silent)"
+    regLevel2 = r"(Verbose|Debug|Info|Warning|Error|Fatal|Silent)"
     regTag = r".+"
     regMessage = r"\s.{0,}"
     regulars = {
@@ -97,6 +99,8 @@ class LogcatFile:
 
         33: [re.compile(fr"^{regIndex}{regSpace}{regDatetime1}"
                         fr"{regSpace}{regPID_TID2}{regSpace}{regLevel2}{regSpace}{regTag}:"), 7],
+
+        999: [re.compile(r""), 0],   # last choice ... just show it
     }
 
     @staticmethod
@@ -153,41 +157,43 @@ class LogcatFile:
         else:
             logSplit = re.split(r"\s+", logLine, maxsplit=pattern[1])
         try:
-            if fmtType in range(0, 8):
+            if fmtType == 999:
+                return LogcatItem(-1, LogcatFile._defaultTime.timestamp(), "", "", "", "V", "", logLine)
+            elif fmtType in range(0, 8):
                 logTime = datetime.strptime(f"{logSplit[0]} {logSplit[1]}", "%Y-%m-%d %H:%M:%S.%f")
                 ret = LogcatFile._formatNonTime(logSplit, 2, fmtType)
-                return LogcatItem(logTime.timestamp(),
+                return LogcatItem(-1, logTime.timestamp(),
                                   ret[0], ret[1], ret[2], ret[3], ret[4], ret[5])
             elif fmtType in range(8, 16):
                 logTime = datetime.strptime(
                     f"{LogcatFile._defaultYear}-{logSplit[0]} {logSplit[1]}", "%Y-%m-%d %H:%M:%S.%f")
                 ret = LogcatFile._formatNonTime(logSplit, 2, fmtType - 8)
-                return LogcatItem(logTime.timestamp(),
+                return LogcatItem(-1, logTime.timestamp(),
                                   ret[0], ret[1], ret[2], ret[3], ret[4], ret[5])
             elif fmtType in range(16, 24):
                 ret = LogcatFile._formatNonTime(logSplit, 1, fmtType - 16)
-                return LogcatItem(float(logSplit[0]),
+                return LogcatItem(-1, float(logSplit[0]),
                                   ret[0], ret[1], ret[2], ret[3], ret[4], ret[5])
             elif fmtType in range(24, 32):
                 ret = LogcatFile._formatNonTime(logSplit, 0, fmtType - 24)
-                return LogcatItem(LogcatFile._defaultTime.timestamp(),
+                return LogcatItem(-1, LogcatFile._defaultTime.timestamp(),
                                   ret[0], ret[1], ret[2], ret[3], ret[4], ret[5])
             elif fmtType == 32:
                 logTime = datetime.strptime(
                     f"{LogcatFile._defaultYear}-{logSplit[0]} {logSplit[1]}", "%Y-%m-%d %H:%M:%S.%f")
                 tags = logSplit[pattern[1]].split(":", 1)
-                return LogcatItem(logTime.timestamp(),
+                return LogcatItem(-1, logTime.timestamp(),
                                   logSplit[2], logSplit[3], "", logSplit[4], tags[0], tags[1])
             elif fmtType == 33:
                 logTime = datetime.strptime(f"{logSplit[1]} {logSplit[2]}", "%Y-%m-%d %H:%M:%S.%f")
-                return LogcatItem(logTime.timestamp(),
+                return LogcatItem(-1, logTime.timestamp(),
                                   logSplit[3], logSplit[4], "", logSplit[5], logSplit[6], logSplit[7])
         except IndexError as e:
             Logger.e(appModel.getAppTag(), f"formatData exception:{logLine}, error:{e}")
         except ValueError as e:
             Logger.e(appModel.getAppTag(), f"formatData exception:{logLine}, error:{e}")
 
-        return LogcatItem(LogcatFile._defaultTime.timestamp(),
+        return LogcatItem(-1, LogcatFile._defaultTime.timestamp(),
                           "", "", "", "", "", "")
 
     @staticmethod
@@ -273,7 +279,7 @@ class LogcatFile:
     def openFile(self, path: str, encoding):
         Logger.i(appModel.getAppTag(), f"path = {path}")
         try:
-            file = open(path, mode="r", encoding=encoding)
+            file = open(path, mode="r", encoding=encoding, errors="ignore")
             file.seek(0, 2)
             fileLen = file.tell()
             file.seek(0, 0)
@@ -315,7 +321,9 @@ class LogcatFile:
         contentData = self._mFileContent
         lineStart = 0
         lineEnd = contentData.find("\n", lineStart)
-        while lineEnd > 0:
+        if lineEnd < 0:
+            lineEnd = len(contentData)
+        while lineEnd >= 0:
             if contentData.find("<tag>", lineStart, lineStart + 6) != lineStart:
                 logLine = contentData[lineStart:lineEnd]
                 fmtType, pattern = LogcatFile.detectFormat(logLine)

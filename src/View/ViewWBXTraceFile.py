@@ -10,7 +10,6 @@ from src.Layout.viewWBXTraceFile import Ui_Form
 from src.Model.AppModel import appModel
 from src.View.DialogTraceViewSetting import DialogTraceViewSetting
 from src.View.WidgetTracerList import WidgetTracerList
-from src.View.WidgetTracerTabview import WidgetTracerTabview
 
 
 class ViewWBXTraceFile(QWidget, Ui_Form):
@@ -24,7 +23,7 @@ class ViewWBXTraceFile(QWidget, Ui_Form):
     DATA_WBT = 1
     DATA_LGF = 2
 
-    def __init__(self, parent=None, widget="List"):
+    def __init__(self, parent=None):
         super(ViewWBXTraceFile, self).__init__(parent)
         Logger.i(appModel.getAppTag(), "")
         self.setupUi(self)
@@ -33,16 +32,11 @@ class ViewWBXTraceFile(QWidget, Ui_Form):
         self._mTraceDataType = self.DATA_NONE
         self._mWBXTracerFile = None
         self._mLGFTracerFile = LogcatFile()
-        if widget == "List":
-            self._mTracerWidget = WidgetTracerList(self, __class__.__name__, False)
-        else:
-            self._mTracerWidget = WidgetTracerTabview(self, __class__.__name__, False)
+        self._mTracerWidget = WidgetTracerList(self, __class__.__name__, False)
         self.layoutTracer.addWidget(self._mTracerWidget)
         self._bindEvent()
         self._initLogLevel()
         self._mReadTracesThread = threading.Thread(target=self._onReadTracesThread)
-        self._mPreSelectTraceIndex = -1
-        self._mPreSelectUIRow = -1
         self._mStartTraceIndex = 0
         self._mEndTraceIndex = -1
         self.show()
@@ -58,15 +52,17 @@ class ViewWBXTraceFile(QWidget, Ui_Form):
     def resizeEvent(self, QResizeEvent):
         return
 
-    def setTraceRange(self, preSelectIndex: int, startIndex: int, endIndex: int):
-        self._mPreSelectTraceIndex = preSelectIndex
+    def setTraceRange(self, startIndex: int, endIndex: int):
         self._mStartTraceIndex = startIndex
         self._mEndTraceIndex = endIndex
         return
 
-    def scrollToPreSelectItem(self):
-        if self._mPreSelectUIRow >= 0:
-            self._mTracerWidget.setSelectRow(self._mPreSelectUIRow)
+    def scrollToItemByLogIndex(self, logIndex: int):
+        itemIndex = self._mTracerWidget.getRowItemByLogIndex(logIndex)
+        if itemIndex >= 0:
+            self._mTracerWidget.setSelectRow(itemIndex)
+        else:
+            Logger.w(appModel.getAppTag(), f"can't local index: {logIndex}")
         return
 
     def openTraceFile(self, path: str, dataType: int):
@@ -155,8 +151,6 @@ class ViewWBXTraceFile(QWidget, Ui_Form):
             self._mWBXTracerFile.readTracesRange(self._onReadWBXTrace, None,
                                                  self._mStartTraceIndex, self._mEndTraceIndex)
             self._mTracerWidget.endLoad()
-            if self._mPreSelectUIRow >= 0:
-                self._mTracerWidget.setSelectRow(self._mPreSelectUIRow)
             del self._mWBXTracerFile
         elif self._mTraceDataType == self.DATA_LGF:
             self._mTracerWidget.beginLoad(self._mLGFTracerFile.getTraceCount())
@@ -175,9 +169,7 @@ class ViewWBXTraceFile(QWidget, Ui_Form):
         level = self.getWBXTraceLevel.get(trace.mLevel, LoggerLevel.Info)
         tag = trace.mName
         message = trace.mMessage
-        addUIRow = self._mTracerWidget.addTrace(timeStr, pid, tid, level, tag, message) - 1
-        if self._mPreSelectTraceIndex == trace.mIndex:
-            self._mPreSelectUIRow = addUIRow
+        self._mTracerWidget.addTrace(trace.mIndex, timeStr, pid, tid, level, tag, message)
         return True
 
     def _onReadLogcatTrace(self, traceLog: LogcatItem, param: [any]) -> bool:
@@ -189,7 +181,7 @@ class ViewWBXTraceFile(QWidget, Ui_Form):
         level = traceLog.getLoggerLevel()
         tag = traceLog.mTag
         message = traceLog.mMessage
-        self._mTracerWidget.addTrace(timeStr, pid, tid, level, tag, message)
+        self._mTracerWidget.addTrace(traceLog.mIndex, timeStr, pid, tid, level, tag, message)
         return True
 
     def _onSelectLogLevel(self, index):

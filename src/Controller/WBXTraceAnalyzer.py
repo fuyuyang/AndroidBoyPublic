@@ -6,8 +6,11 @@ from src.Common import SystemHelper
 """
 windows: Intel(R) Core(TM) i7-6600U CPU @ 2.60GHz 2.81 GHz
     python          18.06 seconds
-    c++@debug       5.8 seconds
     c++@release     0.398721 seconds
+    
+windows: Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz 2.90 GHz
+    python          12.271663 seconds
+    c++@release     0.298202 seconds
     
 mac: Intel(R) 2.6 GHz 6-Core Intel Core i7
     python          14.336805 seconds
@@ -42,19 +45,19 @@ def isValid() -> bool:
 
 def setErrDefine(errorDefine: str):
     if isValid():
-        _setErrDefine(errorDefine.encode("ascii"))
+        _setErrDefine(errorDefine.encode("ascii", "ignore"))
     return
 
 
 def analyzeData(logData: bytes, logFileName: str) -> str:
     if isValid():
-        return _analyzeData(logData, len(logData), logFileName.encode("ascii")).decode("ascii")
+        return _analyzeData(logData, len(logData), logFileName.encode("ascii", "ignore")).decode("ascii")
     else:
         return "{}"
 
 
 def analyzeFile(wbtPath: str) -> str:
     if isValid():
-        return _analyzeFile(wbtPath.encode("ascii")).decode("ascii")
+        return _analyzeFile(wbtPath.encode("ascii", "ignore")).decode("ascii")
     else:
         return "{}"
