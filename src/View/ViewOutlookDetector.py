@@ -85,15 +85,17 @@ class TreeItemInfo:
 class ActionType(IntEnum):
     startLoading = 0
     showUI = 1
-    analyzeTotal = 2
-    analyzeProgress = 3
-    analyzeUpdate = 4
-    selectItem = 5
-    requestLogin = 6
-    symbolTotal = 7
-    symbolProgress = 8
-    downloadTotal = 9
-    downloadProgress = 10
+    readMailTotal = 2
+    readMailProgress = 3
+    analyzeTotal = 4
+    analyzeProgress = 5
+    analyzeUpdate = 6
+    selectItem = 7
+    requestLogin = 8
+    symbolTotal = 9
+    symbolProgress = 10
+    downloadTotal = 11
+    downloadProgress = 12
 
 
 ActionColor = {
@@ -125,7 +127,7 @@ class ViewOutlookDetector(QWidget, Ui_Form):
         self.treeOutlook.setColumnCount(4)
         self.treeOutlook.setHeaderLabels(["Sender", "Version", "Analyzer", "Summary"])
         colWidths = appModel.readConfig(self.__class__.__name__, "colWidths", [330, 120, 100, 100])
-        for i in range(0, 4):
+        for i in range(0, 3):
             self.treeOutlook.setColumnWidth(i, colWidths[i])
         self.treeOutlook.header().setStretchLastSection(True)
         # self.treeOutlook.header().hide()
@@ -144,11 +146,13 @@ class ViewOutlookDetector(QWidget, Ui_Form):
         week_ago = today - datetime.timedelta(days=filterDays)
         self.dateStart.setDate(week_ago)
         self.dateEnd.setDate(today)
+        # self.dateStart.setDate(DateTimeHelper.getDateFromStr("2021-07-30 00:00:00", None))
+        # self.dateEnd.setDate(DateTimeHelper.getDateFromStr("2021-07-30 10:20:30", None))
         self.ckFilterDate.setChecked(True)
         self._onCheckFilterData()
         self.mErrorDefinition = {}
 
-        self._mThreadRunning = False
+        self._mThreadRunning = 0
         self._mThreadOutlook = threading.Thread(target=self._onOutlookThread)
         self._mThreadSymbol = threading.Thread(target=self._onSymbolThread)
         self._mThreadTranslate = threading.Thread(target=self._onTranslateThread)
@@ -167,7 +171,7 @@ class ViewOutlookDetector(QWidget, Ui_Form):
             colWidths.append(self.treeOutlook.columnWidth(i))
         appModel.saveConfig(self.__class__.__name__, "colWidths", colWidths)
 
-        self._mThreadRunning = False
+        self._mThreadRunning = 0
         MailAnalyzer.sStopAnalyze = True
         if self._mThreadOutlook.is_alive():
             self._mThreadOutlook.join()
@@ -198,8 +202,8 @@ class ViewOutlookDetector(QWidget, Ui_Form):
     def _onOutlookThread(self):
         Logger.i(appModel.getAppTag(), "load begin")
         self.sEventOutlookState.emit(ActionType.startLoading, 0, 0, None)
-        self._mThreadRunning = True
-        _mOutlookCtrl = OutlookCtrl(None)
+        self._mThreadRunning += 1
+        _mOutlookCtrl = OutlookCtrl(self._onReadOutlookItem)
         _mOutlookCtrl.initAccounts()
         self._mFilterMails = _mOutlookCtrl.readFilterItems(self._mEmailFilter)
         Logger.i(appModel.getAppTag(), "load end")
@@ -215,9 +219,9 @@ class ViewOutlookDetector(QWidget, Ui_Form):
             self.sEventOutlookState.emit(ActionType.analyzeUpdate, 0, 0, analyzer)
             curIndex += 1
             self.sEventOutlookState.emit(ActionType.analyzeProgress, curIndex, totalCount, None)
-            if not self._mThreadRunning:
+            if self._mThreadRunning <= 0:
                 break
-        self._mThreadRunning = False
+        self._mThreadRunning -= 1
         Logger.i(appModel.getAppTag(), "analyze end")
         return
 
@@ -226,7 +230,7 @@ class ViewOutlookDetector(QWidget, Ui_Form):
         notExistCfgFile = os.path.join(self.sSymbolFolderBase, "notExistVersions.json")
         notExistVersions = FileUtility.loadJsonFile(notExistCfgFile)
         # check how many symbols need to be download
-        self._mThreadRunning = True
+        self._mThreadRunning += 1
         downloadVersions = []
         iterator = QTreeWidgetItemIterator(self.treeOutlook)
         while iterator.value():
@@ -250,10 +254,10 @@ class ViewOutlookDetector(QWidget, Ui_Form):
             from requests import auth
             if state == RequestState.succeed:
                 Logger.i(appModel.getAppTag(), f"state={state}")
-                return self._mThreadRunning
+                return self._mThreadRunning > 0
             elif state == RequestState.failed:
                 Logger.e(appModel.getAppTag(), f"state={state}")
-                return self._mThreadRunning
+                return self._mThreadRunning > 0
             elif state == RequestState.needAuthorization:
                 Logger.i(appModel.getAppTag(), f"state={state}")
                 self._mCCTGUser = None
@@ -288,7 +292,7 @@ class ViewOutlookDetector(QWidget, Ui_Form):
                     downloadUrl, localPath = cctgCtrl.getCurrentTask()
                     notExistVersions[version] = downloadUrl
                     return False
-            return self._mThreadRunning
+            return self._mThreadRunning > 0
 
         count = len(downloadVersions)
         index = 0
@@ -296,6 +300,7 @@ class ViewOutlookDetector(QWidget, Ui_Form):
         cctg = CCTGDownloader(onRequestState, self.sSymbolFolderBase, "cctgToken")
         for version in downloadVersions:
             versionDir = appModel.getAppAbsolutePath(self.sSymbolFolderBase, [version], "")
+            # symbol file
             savePath = os.path.join(versionDir, version + "_release.tar")
             uncompressFile = os.path.join(versionDir, "arm64-v8a")
             if not os.path.exists(uncompressFile) or not os.path.exists(savePath):
@@ -311,32 +316,56 @@ class ViewOutlookDetector(QWidget, Ui_Form):
                         compressedFile = tarfile.open(savePath)
                         for tarinfo in compressedFile:
                             compressedFile.extract(tarinfo, path=versionDir)
+            # mapping file
+            savePath = os.path.join(versionDir, version + "_release_mapping.tar")
+            uncompressFile = os.path.join(versionDir, "mapping.txt")
+            if not os.path.exists(uncompressFile) or not os.path.exists(savePath):
+                # download it
+                self._mKeepDownloadFile = False
+                if not cctg.getMasterMapping(version, True, savePath):
+                    if os.path.exists(savePath) and not self._mKeepDownloadFile:
+                        os.remove(savePath)
+                        continue
+                if not os.path.exists(uncompressFile) and os.path.exists(savePath):
+                    # uncompress it
+                    if tarfile.is_tarfile(savePath):
+                        compressedFile = tarfile.open(savePath)
+                        for tarinfo in compressedFile:
+                            compressedFile.extract(tarinfo, path=versionDir)
             index += 1
             self.sEventOutlookState.emit(ActionType.symbolProgress, index, count, None)
         FileUtility.saveJsonFile(notExistCfgFile, notExistVersions)
-        self._mThreadRunning = False
+        self._mThreadRunning -= 1
         Logger.i(appModel.getAppTag(), "download end")
         return
 
     def _onTranslateThread(self):
         Logger.i(appModel.getAppTag(), "translate thread begin")
+        self._mThreadRunning += 1
         for emailID, emailItem in self._mFilterMails.items():
             if emailItem.mAnalyzer is not None:
                 analyzer: MailAnalyzer = cast(MailAnalyzer, emailItem.mAnalyzer)
                 analyzer.getTranslated(True)
-            if not self._mThreadRunning:
+            if self._mThreadRunning <= 0:
                 break
+        self._mThreadRunning -= 1
         Logger.i(appModel.getAppTag(), "translate thread end")
         return
 
-    def _onReadOutlookItem(self, email: EmailItem, folder: FolderItem, account: AccountItem) -> bool:
+    def _onReadOutlookItem(self, email: EmailItem, folder: FolderItem, account: AccountItem,
+                           index: int, count: int) -> bool:
         if email is not None:
+            if index == 1:
+                self.sEventOutlookState.emit(ActionType.readMailTotal, count, 0, None)
+            self.sEventOutlookState.emit(ActionType.readMailProgress, index, count, None)
             pass
         elif folder is not None:
+            Logger.d(appModel.getAppTag(), f"reading folder: {index}/{count}")
             pass
         elif account is not None:
+            Logger.d(appModel.getAppTag(), f"reading account: {account.mName} - {index}/{count}")
             pass
-        return self._mThreadRunning
+        return self._mThreadRunning > 0
 
     def _onEventOutlookState(self, state: int, param1: int, param2: int, paramObject: object):
         if state == ActionType.startLoading:
@@ -353,6 +382,19 @@ class ViewOutlookDetector(QWidget, Ui_Form):
             self._showOutlookUI()
             self.setDisabled(False)
             self._mEventAnalyzeMail.set()
+        elif state == ActionType.readMailTotal:
+            Logger.i(appModel.getAppTag(), f"state={state}, param1={param1}, param2={param2}")
+            if param1 <= 0:
+                return
+            self.prog1.setOrientation(Qt.Horizontal)
+            self.prog1.setMaximum(param1)
+            self.lbProg1.setText("Reading")
+            QTHelper.showLayout(self.layoutProg1, True)
+        elif state == ActionType.readMailProgress:
+            self.prog1.setValue(param1)
+            if param1 == self.prog1.maximum():
+                Logger.i(appModel.getAppTag(), f"state={state}, param1={param1}, param2={param2}")
+                QTHelper.showLayout(self.layoutProg1, False)
         elif state == ActionType.analyzeTotal:
             Logger.i(appModel.getAppTag(), f"state={state}, param1={param1}, param2={param2}")
             if param1 <= 0:
@@ -473,152 +515,8 @@ class ViewOutlookDetector(QWidget, Ui_Form):
         return
 
     def _onQueryMails(self):
-        errorDefinition = {
-            "OCSP response has expired": [
-                "certificate expired",
-                "certificate"
-            ],
-            "aReason=31000021": [
-                "no audio(31000021)",
-                "audio"
-            ],
-            "processJoinMeetingCommand, success=false": [
-                "can't join meeting(processJoinMeetingCommand failure)",
-                "join meeting"
-            ],
-            "processGlobalSearchCommand, success= false": [
-                "no meeting found(processGlobalSearchCommand failure) -  might captcha",
-                "join meeting"
-            ],
-            "createLicenseDlg": [
-                "join meeting failure (meeting license limit, correct scenario)",
-                "join meeting"
-            ],
-            # same log with processJoinMeetingCommand, success=false, how to handle???
-            "<MsgCode>107</MsgCode><Message>WebExUserIDInactive</Message>": [
-                "account inactive (processJoinMeetingCommand failure) ",
-                "join meeting"
-            ],
-            # NATIVE_WME  [TID:36650][NATIVE_TID:25673][UTIL] MultiMediaDataEncrypt, Decrypt Error this=0x757d185a98
-            "Decrypt Error": [
-                "e2ee decrypt error",
-                "in meeting session not work"
-            ],
-            "cmReason = 65002": [
-                "no audio(65002)",
-                "audio"
-            ],
-            "errNo: 31001": [
-                "can't join meeting(31001)",
-                "join meeting"
-            ],
-            "errNo: 31002": [
-                "can't join meeting(31002)",
-                "join meeting"
-            ],
-            "errorNo=31016": [
-                "can't join meeting(31016)",
-                "join meeting"
-            ],
-            "errorNo=500000": [
-                "can't join meeting(500000)",
-                "join meeting"
-            ],
-            "ret =30028": [
-                "can't turn on mic",
-                "audio"
-            ],
-            "<MsgCode>133</MsgCode><Message>InvalidPassword</Message>": [
-                "invalid password(processJoinMeetingCommand failure)",
-                "join meeting"
-            ],
-            "{\"code\":401000,\"message\":\"Need login before access\"}": [
-                "join require login(WbxAppApi failure)",
-                "join meeting"
-            ],
-            "{\"code\":403019": [
-                "host account in active(WbxAppApi return response)",
-                "join meeting"
-            ],
-            "{\"code\":404006": [
-                "cannot find the data(WbxAppApi return response)",
-                "join meeting"
-            ],
-            "{\"code\":404003": [
-                "Meeting data not found(WbxAppApi return response)",
-                "join meeting"
-            ],
-            "<MsgCode>118</MsgCode><Message>CanNotJoinNotStartedMeeting</Message>": [
-                "not started yet(processJoinMeetingCommand failure)",
-                "join meeting"
-            ],
-            "<MsgCode>120</MsgCode><Message>UnkownError</Message>": [
-                "unkonwn error(processJoinMeetingCommand failure)",
-                "join meeting"
-            ],
-            "on_conference_join_confirm, ERROR in joining code=53": [
-                "GCC_RESULT_CONFERENCE_NOT_FOUND",
-                "join meeting"
-            ],
-            "SSL_connect timeout with": [
-                "might join meeting",
-                "ssl connect timeout"
-            ],
-            "select fail with 115": [
-                "might join meeting",
-                "socket error"
-            ],
-            "Network is unreachable": [
-                "might join meeting",
-                "Network is unreachable"
-            ],
-            "xmlApiErr2LocalErr Unknown XMLAPI Error:1001": [
-                "xml api error",
-                "xml api error"
-            ],
-            "get reject join message": [
-                "get reject from CB(too many join)",
-                "join meeting"
-            ],
-            "Uncaught exception": [
-                "Java exception",
-                "crash"
-            ],
-            "on Native Crash enter!!!": [
-                "Native crash",
-                "crash"
-            ],
-            "CCmConnectorOpenSslT::DoHandshake, SSL_connect() failed": [
-                "can't join mmp (SSL_connect failed)",
-                "audio"
-            ],
-            "showErrorDialog errorNo=": [
-                "can't join meeting(showErrorDialog)",
-                "join meeting"
-            ],
-            "OCSP_basic_verify:certificate verify error": [
-                "can't join mmp(OCSP)",
-                "audio"
-            ],
-            "startVoIP()": [
-                "startVoIP",
-                "audio"
-            ],
-            "leaveMeeting return:": [
-                "leaveMeeting",
-                "join meeting"
-            ],
-            "errorNo=31010": [
-                "can't join meeting(31010)",
-                "join meeting"
-            ],
-            "errorNo=31202": [
-                "can't join meeting(31202)",
-                "join meeting"
-            ],
-
-        }
-        self.mErrorDefinition = appModel.readConfig(self.__class__.__name__, "errorDefinition", errorDefinition)
+        errorDefinition = FileUtility.loadJsonFile(os.path.join(appModel.mAssetsPath, "WBTErrorDefinition.json"))
+        self.mErrorDefinition = errorDefinition["errorDefinition"]
 
         if self.ckFilterDate.isChecked():
             self._mEmailFilter.beginDate = self.dateStart.dateTime().toPyDateTime().timestamp()
