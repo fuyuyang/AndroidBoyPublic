@@ -1,7 +1,7 @@
 import copy
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Tuple
 from src.Common import SystemHelper, DateTimeHelper, FileUtility
 from src.Common.Logger import Logger
@@ -64,6 +64,7 @@ class EmailObjectMac:
         self.Subject = email["_subject"]
         self.Body = email["_body"]
         self.ReceivedTime = self.getReceivedTime(email["_receivedTime"])
+        self.ReceivedTime += timedelta(0, DateTimeHelper.timezoneOffset)            # timezone offset
         self.SenderName = email["_senderName"]
         self.SenderEmailAddress = email["_senderEmail"]
         self.ReceivedByName = "receivedByName"
@@ -85,6 +86,7 @@ class EmailItem:
         self.mSubject: str = emailObject.Subject
         self.mBody: str = emailObject.Body
         self.mReceivedTime: datetime = emailObject.ReceivedTime
+        # self.mReceivedTime -= timedelta(0, DateTimeHelper.timezoneOffset)            # timezone offset
         self.mSenderName: str = emailObject.SenderName
         self.mSenderEmail: str = emailObject.SenderEmailAddress
         self.mReceiveName: str = emailObject.ReceivedByName
@@ -95,7 +97,8 @@ class EmailItem:
         # local folder
         # for c in "/\\:*\"<>|?. ":
         #    senderName = self.mSenderName.replace(c, "_")
-        localFolder = self.mReceivedTime.strftime("%m%d%Y_%H%M%S_")
+        localFolder = DateTimeHelper.getTimestampString(self.mReceivedTime.timestamp(), "%m%d%Y_%H%M%S_")
+        # localFolder = self.mReceivedTime.strftime("%m%d%Y_%H%M%S_")
         localFolder += self.mSenderEmail
         self.mLocalFolder = os.path.join(localFolderBase, localFolder)
         FileUtility.makeFolder(self.mLocalFolder)
