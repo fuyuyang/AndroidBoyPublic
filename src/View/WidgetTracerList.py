@@ -129,6 +129,7 @@ class WidgetTracerList(QWidget, Ui_Form):
         self.listTrace.horizontalScrollBar().setDisabled(True)
         self.listImportant.setWordWrap(True)
         if self._mAddable:
+            self.listBaseInfo.hide()
             self.listImportant.hide()
 
         self._mLoading = False
@@ -315,7 +316,7 @@ class WidgetTracerList(QWidget, Ui_Form):
         dataToCopy = ""
         for item in items:
             trace: TracerLine = item.data(Qt.UserRole)
-            dataToCopy += trace.mMessage
+            dataToCopy += trace.mMessage + os.linesep
         pyperclip.copy(dataToCopy)
         self._mNotifyWidget.notify(f"Copied {len(items)} messages to clipboard", 2)
         return
@@ -357,9 +358,10 @@ class WidgetTracerList(QWidget, Ui_Form):
     def _onDoubleClickImportant(self, QModelIndex):
         row = QModelIndex.row()
         Logger.i(appModel.getAppTag(), f"at {row}")
-        traceRow = self.listImportant.item(row).data(Qt.UserRole)
+        traceItem: QListWidgetItem = self.listImportant.item(row).data(Qt.UserRole)
 
-        self.setSelectRow(traceRow)
+        # self.setSelectRow(traceRow)
+        self.setSelectItem(traceItem)
         return
 
     def _onSelectLogChanged(self):
@@ -421,7 +423,7 @@ class WidgetTracerList(QWidget, Ui_Form):
             self.listBaseInfo.addItem("Android Release: " + baseInfo["Build.VERSION.RELEASE"])
         if "TIMEZONE.ID" in baseInfo:
             self.listBaseInfo.addItem("Timezone: " + baseInfo["TIMEZONE.ID"])
-        if self.listBaseInfo.count() <=0:
+        if self.listBaseInfo.count() <= 0:
             self.listBaseInfo.hide()
         else:
             self.listBaseInfo.show()
@@ -565,6 +567,21 @@ class WidgetTracerList(QWidget, Ui_Form):
                 item.setBackground(uiTheme.colorMarkedBackground)
         return
 
+    @staticmethod
+    def setItemMarked(item: QListWidgetItem, marked: bool):
+        Logger.i(appModel.getAppTag(), f"setItemMarked set {item} to {marked}")
+        if item is None:
+            Logger.e(appModel.getAppTag(), f"setItemMarked, item is none.")
+            return
+        trace: TracerLine = item.data(Qt.UserRole)
+        if marked:
+            trace.mMarked = True
+            item.setBackground(uiTheme.colorMarkedBackground)
+        else:
+            trace.mMarked = False
+            item.setBackground(uiTheme.colorNormalBackground)
+        return
+
     def clearMark(self):
         self._mTracesModelLock.acquire()
         procTime = DateTimeHelper.ProcessTime()
@@ -680,9 +697,9 @@ class WidgetTracerList(QWidget, Ui_Form):
                 for key, value in errorDefinition.items():
                     if key in trace.mMessage:
                         itemImportant = QListWidgetItem(value[0])
-                        row = self.listTrace.indexFromItem(item).row()
-                        itemImportant.setData(Qt.UserRole, row)
+                        itemImportant.setData(Qt.UserRole, item)
                         self.listImportant.addItem(itemImportant)
+                        self.setItemMarked(item, True)
             Logger.i(appModel.getAppTag(), f"end with {endFind} in {procTime.getMicroseconds()}")
         return
 
@@ -692,6 +709,15 @@ class WidgetTracerList(QWidget, Ui_Form):
 
     def endLoad(self):
         self._mEventEndLoad.emit(self)
+        return
+
+    def setSelectItem(self, item: QListWidgetItem):
+        if item is not None:
+            if item.isHidden():
+                Logger.w(appModel.getAppTag(), f"setSelectItem: {item} is hidden.")
+            else:
+                self.listTrace.scrollToItem(item)  # ensure visuable
+                self.listTrace.setCurrentItem(item)
         return
 
     def setSelectRow(self, row: int):
@@ -766,10 +792,12 @@ class WidgetTracerList(QWidget, Ui_Form):
                 if self._mAdding:
                     self._mAdding = False
                     self._onEndAdding()
+                    self._onFilterTraces(True)
                 return
             self.listTrace.setUpdatesEnabled(False)
             self._onAddLines(startLine, endLine)
-            self._onFilterTraces()
+            if self._mAddable:
+                self._onFilterTraces()
             self.listTrace.setUpdatesEnabled(True)
             self.listTrace.update()
         return
@@ -844,10 +872,12 @@ class WidgetTracerList(QWidget, Ui_Form):
             return
         # level or msg
         hasFound = self._mFilterLogInclude.lower() in item.text().lower()
-        if not hasFound or trace.mLevel < self._mFilterLogLevel:
+        hasInTag = self._mFilterLogInclude.lower() in trace.mTag.lower()
+        if (not hasFound and not hasInTag) or trace.mLevel < self._mFilterLogLevel:
             trace.mVisual = False
         else:
             trace.mVisual = True
+
         return
 
     def getColsVisual(self):

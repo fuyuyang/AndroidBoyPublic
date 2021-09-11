@@ -19,7 +19,6 @@ from src.Model.AppModel import appModel
 from src.View.ViewDumpFile import ViewDumpFile
 from src.View.ViewPicture import ViewPicture
 from src.View.ViewWBXTraceFile import ViewWBXTraceFile
-from src.Common.QTHelper import ListForQLineEdit
 
 
 class _ErrorTypeInList(IntEnum):
@@ -79,8 +78,7 @@ class DialogMailDetail(QDialog, Ui_Dialog):
         return
 
     def closeEvent(self, event):
-        Logger.i(appModel.getAppTag(), "{event}")
-        ListForQLineEdit.getInstance().closeEvent(event)
+        Logger.i(appModel.getAppTag(), "")
         self._saveSummary()
         self._handleWndPos(False)
         ListForQLineEdit.closeInstance()
@@ -181,9 +179,10 @@ class DialogMailDetail(QDialog, Ui_Dialog):
             for path in result["Attachment"]:
                 if zipfile.is_zipfile(path):
                     zipFile = zipfile.ZipFile(path)
-                    for subFileName in zipFile.namelist():
-                        pathData = path + "?" + subFileName
-                        item = QListWidgetItem(subFileName)
+                    for subFile in zipFile.filelist:
+                        pathData = path + "?" + subFile.filename
+                        item = QListWidgetItem(subFile.filename +
+                                               "   [" + FileUtility.fileSizeFmt(subFile.file_size) + "]")
                         item.setData(Qt.UserRole, [_ErrorTypeInList.normal, pathData])
                         item.setBackground(uiTheme.colorNormalBackground)
                         item.setForeground(_ErrorColor.get(_ErrorTypeInList.normal))
@@ -195,6 +194,8 @@ class DialogMailDetail(QDialog, Ui_Dialog):
                     item.setBackground(uiTheme.colorNormalBackground)
                     item.setForeground(_ErrorColor.get(_ErrorTypeInList.normal))
                     self.ltErrors.addItem(item)
+
+        self.ltErrors.sortItems()
 
         if "Summary" in result:
             self.cbType.setCurrentText(result["Summary"]["Type"])
@@ -312,42 +313,38 @@ class DialogMailDetail(QDialog, Ui_Dialog):
         elif errorInfo[0] == _ErrorTypeInList.normal:
             # locate file line
             path = errorInfo[1]
-            if re.search(r".zip$", path, flags=re.IGNORECASE):
+            if re.search(r".zip.*wbt$", path, flags=re.IGNORECASE):
                 fileName = path.split("?")[1]
             else:
                 fileName = os.path.basename(path)
 
-            Logger.i(appModel.getAppTag(), f"_onDoubleClickError file {fileName}")
-            bNeedOpen =  re.search(r".wbt$", fileName, flags=re.IGNORECASE)
-            strTmp:[] = path.split("?")
-            if len(strTmp) > 1:
-                fileName= strTmp[1]
-            else:
-                fileName= path
-
+            hasTabOpened = False
+            isWbtFile = re.search(r".wbt$", fileName, flags=re.IGNORECASE)
             for i in range(0, self.tabAttachments.count()):
                 tabTitle = self.tabAttachments.tabText(i)
-                if fileName == tabTitle:
+                if '['+fileName + ']' == tabTitle or (not isWbtFile and fileName == tabTitle):
                     view = self.tabAttachments.widget(i)
                     self.tabAttachments.setCurrentWidget(view)
-                    bNeedOpen = False
+                    hasTabOpened = True
                     break
 
-            if bNeedOpen:
-                Logger.i(appModel.getAppTag(), f"will open: {fileName}")
-                zipName = path.split("?")[0]
-                zipFile = zipfile.ZipFile(zipName)
-                fileData = zipFile.read(fileName)
-                view = ViewWBXTraceFile(self)
-                view.openTraceData(fileData, view.DATA_WBT)
-                tabCount = self.tabAttachments.count()
-                title = fileName
-                self.tabAttachments.setCurrentIndex(
-                    self.tabAttachments.insertTab(tabCount, view, title))
+            if not hasTabOpened and isWbtFile:
+                # open wbt file
+                path = errorInfo[1]
+                zipFilePath = path.split("?")[0]
+                wbxFileName = path.split("?")[1]
+                if re.search(r".zip$", zipFilePath, flags=re.IGNORECASE)\
+                        and re.search(r".wbt$", wbxFileName, flags=re.IGNORECASE):
+                    zipFile = zipfile.ZipFile(zipFilePath)
+                    fileData = zipFile.read(wbxFileName)
+                    view = ViewWBXTraceFile(self)
+                    view.openTraceData(fileData, view.DATA_WBT)
+                    newTab = self.tabAttachments.insertTab(self.tabAttachments.count(), view, '['+wbxFileName + ']')
+                    self.tabAttachments.setCurrentIndex(newTab)
+
         return
 
     def _openAttachment(self, path):
-        Logger.i(appModel.getAppTag(), f"_openAttachment: {path}")
         if self.mAnalyzer is None:
             Logger.e(appModel.getAppTag(), "email.mAnalyzer is None")
             return

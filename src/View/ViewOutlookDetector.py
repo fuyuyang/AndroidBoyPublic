@@ -149,8 +149,8 @@ class ViewOutlookDetector(QWidget, Ui_Form):
         week_ago = today - datetime.timedelta(days=filterDays)
         self.dateStart.setDate(week_ago)
         self.dateEnd.setDate(today)
-        # self.dateStart.setDate(DateTimeHelper.getDateFromStr("2021-07-30 00:00:00", None))
-        # self.dateEnd.setDate(DateTimeHelper.getDateFromStr("2021-07-30 10:20:30", None))
+        # self.dateStart.setDate(DateTimeHelper.getDateFromStr("2021-08-06 00:00:00", None))
+        # self.dateEnd.setDate(DateTimeHelper.getDateFromStr("2021-09-09 23:59:30", None))
         self.ckFilterDate.setChecked(True)
         self._onCheckFilterData()
         self.mErrorDefinition = {}
@@ -573,16 +573,19 @@ class ViewOutlookDetector(QWidget, Ui_Form):
             QMessageBox().question(self, '', "No data to export.", QMessageBox.Yes)
             return
 
-        excelFiler = open('email_file.csv', mode='w', newline='', encoding='utf-8')
+        excelFiler = open('email_file.csv', mode='w', newline='', encoding='utf-8', errors="ignore")
         excelWriter = csv.writer(excelFiler, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         for emailID, emailItem in self._mFilterMails.items():
             treeItemInfo: TreeItemInfo = cast(TreeItemInfo, emailItem.mCustomerData)
             treeItem: QTreeWidgetItem = treeItemInfo.mTreeItem
             sender = treeItem.text(COL_SENDER)
+            version = treeItem.text(COL_VERSION)
+            timezone = treeItem.text(COL_TIMEZONE)
             analyzer: MailAnalyzer = cast(MailAnalyzer, emailItem.mAnalyzer)
             if "Summary" in analyzer.mAnalyzeResult:
                 summary = analyzer.mAnalyzeResult["Summary"]
-                excelWriter.writerow([sender, summary["Type"], summary["Description"], summary["Addition"]])
+                excelWriter.writerow([sender, version, timezone,
+                                      summary["Type"], summary["Description"], summary["Addition"]])
         excelFiler.close()
 
         qm = QMessageBox()
@@ -593,7 +596,7 @@ class ViewOutlookDetector(QWidget, Ui_Form):
 
     def _onImportExcel(self):
         if len(self._mFilterMails.items()) <= 0:
-            QMessageBox().question(self, '', "No data need to be imported.", QMessageBox.Yes)
+            QMessageBox().warning(self, '', "No data need to be imported.", QMessageBox.Yes)
             return
 
         title = "Select excel file"
@@ -615,9 +618,11 @@ class ViewOutlookDetector(QWidget, Ui_Form):
         for csvRow in excelReader:
             summaryArray.append({
                 "Sender": csvRow[0],
-                "Type": csvRow[1],
-                "Description": csvRow[2],
-                "Addition": csvRow[3]
+                "Version": csvRow[1],
+                "Timezone": csvRow[2],
+                "Type": csvRow[3],
+                "Description": csvRow[4],
+                "Addition": csvRow[5]
             })
         excelFiler.close()
 
@@ -653,7 +658,7 @@ class ViewOutlookDetector(QWidget, Ui_Form):
 
         tipMessage = f"Imported {importedCount}, updated {updatedCount}," \
                      f" total {len(summaryArray)} records in excel file"
-        QMessageBox().question(self, '', tipMessage, QMessageBox.Yes)
+        QMessageBox().information(self, '', tipMessage, QMessageBox.Yes)
         return
 
     def _onMailDetail(self, index: QModelIndex):

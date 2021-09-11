@@ -173,7 +173,7 @@ class WBXTraceItemV3(StructPointer):
         nameLen = self.mInstanceOffset - self.mNameOffset
         instanceLen = self.mMsgOffset - self.mInstanceOffset
         try:
-            self.mName = logData[0:nameLen].decode(decType)
+            self.mName = logData[0:nameLen-1].decode(decType)
             self.mInstance = logData[nameLen:instanceLen].decode(decType)
             # msgEnd = self.mSize - nameLen + instanceLen  # logData.find(b"\x00", nameLen + instanceLen)
             msgEnd = logData.find(b"\x00", nameLen + instanceLen)
@@ -239,6 +239,8 @@ class WBXTracerFile:
         return
 
     def _onReadAppInfo(self, trace: WBXTraceItemV3, param: [any]) -> bool:
+        if param is None:
+            pass
         if "Application version" in trace.mMessage:
             defs = trace.mMessage.split("; ")
             for defValue in defs:
