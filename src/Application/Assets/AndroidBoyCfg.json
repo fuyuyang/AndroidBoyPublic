@@ -21,12 +21,38 @@
       "volume",
       "startv",
       "30028",
-      "audio"
+      "audio",
+      "RecordAudioProcessing",
+      ".dmp",
+      "joinm",
+      "InvalidPanelistEmail",
+      "errordialog",
+      "raise",
+      "31000",
+      "leavem",
+      "confagent",
+      "reconnect",
+      "clientsession",
+      "joinmee",
+      "joinmeeting",
+      "socket",
+      "stopmy",
+      "processme",
+      "process",
+      "Time: 2021-09-02 10:57:51.673\nPID: 0\nTID: 0\nLevel: Info\nTag: NATIVE_VIDUX\u0000\n\n[TID:68613][NATIVE_TID:20751]CMmServiceBridge::ProcessMessage() subject ",
+      "ProcessMessage() subject ",
+      "callvol",
+      "checkaudi",
+      "checkaudiovol",
+      "checkvol",
+      "checkvolu",
+      "checkAudioVolume",
+      "contentobs"
     ],
     "enableADBCommandsView": false,
     "enableLogcatView": false,
     "enableOutlookDetector": true,
-    "startSelectDir": "/Users/jeriyang/cctg-android/tools/ubuntu/dump/crash",
+    "startSelectDir": "/Users/jeriyang/Downloads/bug/41.9/20210901",
     "winGeometry": "AdnQywADAAAAAAAAAAAAGQAABo8AAAPfAAAAAAAAADUAAAaPAAAD3wAAAAACAAAABpAAAAAAAAAANQAABo8AAAPf"
   },
   "CCTGDownloader": {
@@ -51,7 +77,7 @@
   },
   "ViewDumpFile": {
     "startSelectDir": "",
-    "symbolFolder": "/Users/jeriyang/PycharmProjects/AndroidBoyPublic/src/Application/Assets/WebexSymbols/41.6.0.241060494/arm64-v8a"
+    "symbolFolder": "/Users/jeriyang/PycharmProjects/AndroidBoyPublic/src/Application/Assets/WebexSymbols/41.8.0.241080287/arm64-v8a"
   },
   "ViewLogcat": {
     "ColsVisual": [
@@ -81,20 +107,64 @@
       296,
       136,
       222,
-      1092
+      400
     ],
     "errorDefinition": {
+      "<MsgCode>107</MsgCode><Message>WebExUserIDInactive</Message>": [
+        "account inactive (processJoinMeetingCommand failure) ",
+        "join meeting"
+      ],
+      "<MsgCode>118</MsgCode><Message>CanNotJoinNotStartedMeeting</Message>": [
+        "not started yet(processJoinMeetingCommand failure)",
+        "join meeting"
+      ],
+      "<MsgCode>120</MsgCode><Message>UnkownError</Message>": [
+        "unkonwn error(processJoinMeetingCommand failure)",
+        "join meeting"
+      ],
+      "<MsgCode>133</MsgCode><Message>InvalidPassword</Message>": [
+        "invalid password(processJoinMeetingCommand failure)",
+        "join meeting"
+      ],
+      "<serv:exceptionID>060034<": [
+        "invalid password",
+        "join meeting"
+      ],
+      "Decrypt Error": [
+        "e2ee decrypt error",
+        "in meeting session not work"
+      ],
+      "Network is unreachable": [
+        "might join meeting",
+        "Network is unreachable"
+      ],
       "OCSP response has expired": [
         "certificate expired",
         "certificate"
       ],
-      "aReason=31000021": [
-        "no audio(31000021)",
+      "SSL_connect timeout with": [
+        "might join meeting",
+        "ssl connect timeout"
+      ],
+      "Uncaught exception!!!": [
+        "Java crash 6",
+        "in meeting"
+      ],
+      "aReason=31005": [
+        "no audio(31005)",
+        "audio"
+      ],
+      "aReason=31006": [
+        "no audio(31006)",
         "audio"
       ],
       "cmReason = 65002": [
         "no audio(65002)",
         "audio"
+      ],
+      "createLicenseDlg": [
+        "join meeting failure (meeting license limit, correct scenario)",
+        "join meeting"
       ],
       "errNo: 31001": [
         "can't join meeting(31001)",
@@ -102,10 +172,6 @@
       ],
       "errNo: 31002": [
         "can't join meeting(31002)",
-        "join meeting"
-      ],
-      "errorNo=31010": [
-        "can't join meeting(31010)",
         "join meeting"
       ],
       "errorNo=31016": [
@@ -116,9 +182,61 @@
         "can't join meeting(500000)",
         "join meeting"
       ],
+      "get reject join message": [
+        "get reject from CB(too many join)",
+        "join meeting"
+      ],
+      "getWCACertificates failed, error = ": [
+        "Get WCA failed",
+        "in meeting"
+      ],
+      "on Native Crash ": [
+        "Native crash 6",
+        "in meeting"
+      ],
+      "on_conference_join_confirm, ERROR in joining code=53": [
+        "GCC_RESULT_CONFERENCE_NOT_FOUND",
+        "join meeting"
+      ],
+      "processGlobalSearchCommand, success= false": [
+        "no meeting found(processGlobalSearchCommand failure) -  might captcha",
+        "join meeting"
+      ],
+      "processJoinMeetingCommand, success=false": [
+        "can't join meeting(processJoinMeetingCommand failure)",
+        "join meeting"
+      ],
       "ret =30028": [
         "can't turn on mic",
         "audio"
+      ],
+      "select fail with 115": [
+        "might join meeting",
+        "socket error"
+      ],
+      "showErrorDialog errorNo=": [
+        "ErrorDialog shown",
+        "join meeting"
+      ],
+      "xmlApiErr2LocalErr Unknown XMLAPI Error:1001": [
+        "xml api error",
+        "xml api error"
+      ],
+      "{\"code\":401000,\"message\":\"Need login before access\"}": [
+        "join require login(WbxAppApi failure)",
+        "join meeting"
+      ],
+      "{\"code\":403019": [
+        "host account in active(WbxAppApi return response)",
+        "join meeting"
+      ],
+      "{\"code\":404003": [
+        "Meeting data not found(WbxAppApi return response)",
+        "join meeting"
+      ],
+      "{\"code\":404006": [
+        "cannot find the data(WbxAppApi return response)",
+        "join meeting"
       ]
     },
     "filterDays": 3,
@@ -127,13 +245,13 @@
   },
   "ViewWBXTraceFile": {
     "ColsVisual": [
-      false,
-      false,
       true,
       true,
+      false,
+      false,
       true,
       true
     ],
-    "selLogLevel": "Verbose"
+    "selLogLevel": "Warning"
   }
 }

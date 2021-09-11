@@ -123,6 +123,11 @@
     "<serv:exceptionID>060034<": [
       "invalid password",
       "join meeting"
+    ],
+
+    "showErrorDialog errorNo=": [
+      "ErrorDialog shown",
+      "join meeting"
     ]
   }
 }
