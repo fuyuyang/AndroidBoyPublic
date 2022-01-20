@@ -39,6 +39,7 @@ class ViewLogcat(QWidget, Ui_Form):
         self.setupUi(self)
         QTHelper.switchMacUI(self)
 
+        self.ckUsingRegx.setChecked(appModel.readConfig(self.__class__.__name__, f"FilterUsingRegx", False))
         self._mTracerWidget = WidgetTracerList(self, __class__.__name__, True)
         self.layoutTracer.addWidget(self._mTracerWidget)
         self._mNotifyWidget = WidgetNotify(self)
@@ -111,8 +112,10 @@ class ViewLogcat(QWidget, Ui_Form):
         self.btNextMark.clicked.connect(self._onNextMark)
         self.btOpenLogFolder.clicked.connect(self._onBTOpenLogFolder)
         self.btFilter.clicked.connect(self._onFilterLogcat)
+        self.ckUsingRegx.clicked.connect(self._onFilterLogcat)
         self.btInstallAPK.clicked.connect(self._onBTInstallAPK)
         self.btPushText.clicked.connect(self._onBTPushText)
+        self.btClipperText.clicked.connect(self._onBTClipperText)
         self.btADBWifi.clicked.connect(self._onBTADBWifi)
 
         self.editFilter.textChanged.connect(self._onEditorTextChanged)
@@ -232,9 +235,8 @@ class ViewLogcat(QWidget, Ui_Form):
         Logger.i(appModel.getAppTag(), f"index={index}, process={curProcess}")
         appModel.saveConfig(self.__class__.__name__, "selProcess", curProcess.mNAME)
 
-        self._mLogcatFileLock.acquire()
-        self._mLogcatFile.writePIDName(curProcess.mPID, curProcess.mNAME)
-        self._mLogcatFileLock.release()
+        with self._mLogcatFileLock:
+            self._mLogcatFile.writePIDName(curProcess.mPID, curProcess.mNAME)
         self._mPreFilterPID = curProcess.mPID
         self._mPreFilterCount = 0
         return
@@ -246,7 +248,7 @@ class ViewLogcat(QWidget, Ui_Form):
         curLogLevel = self.cbLogLevel.itemData(index)
         appModel.saveConfig(self.__class__.__name__, "selLogLevel", curLogLevel.name)
         Logger.i(appModel.getAppTag(), f"index={index}, logLevel={curLogLevel}")
-        self._mTracerWidget.setFilter(curLogLevel)
+        self._mTracerWidget.setFilter(logLevel=curLogLevel)
         return
 
     def _onPreFilterLog(self, logItem: AndroidLogItem):
@@ -261,17 +263,16 @@ class ViewLogcat(QWidget, Ui_Form):
             return False
 
     def _onLogcat(self, logItems: [AndroidLogItem]):
-        self._mLogcatFileLock.acquire()
-        for logItem in logItems:
-            timeStr = logItem.getDateTimeStr()
-            pid = logItem.getPID()
-            tid = logItem.getTID()
-            level = logItem.getLogLevel()
-            tag = logItem.getTag()
-            message = logItem.getMsg()
-            self._mLogcatFile.writeTraces(logItem.getFull())
-            self._mTracerWidget.addTrace(-1, timeStr, pid, tid, level, tag, message)
-        self._mLogcatFileLock.release()
+        with self._mLogcatFileLock:
+            for logItem in logItems:
+                timeStr = logItem.getDateTimeStr()
+                pid = logItem.getPID()
+                tid = logItem.getTID()
+                level = logItem.getLogLevel()
+                tag = logItem.getTag()
+                message = logItem.getMsg()
+                self._mLogcatFile.writeTraces(logItem.getFull())
+                self._mTracerWidget.addTrace(-1, timeStr, pid, tid, level, tag, message)
         return
 
     def _onStartLogcat(self):
@@ -296,20 +297,19 @@ class ViewLogcat(QWidget, Ui_Form):
         return
 
     def _onSaveToFile(self):
-        self._mLogcatFileLock.acquire()
-        if self.btSaveToFile.isChecked():
-            logcatPath = appModel.getLogcatFile("")
-            self._mLogcatFile.createFile(logcatPath, "utf-8")
-            if len(logcatPath) > 0:
-                self._mNotifyWidget.notify(f"Write log into file:{logcatPath}", 2)
-        else:
-            logcatPath, traceCount = self._mLogcatFile.closeWrite()
-            if len(logcatPath) > 0:
-                if traceCount > 0:
-                    self._mNotifyWidget.notify(f"Saved to file:{logcatPath}", 2)
-                else:
-                    self._mNotifyWidget.notify(f"No record was saved to file:{logcatPath}", 2)
-        self._mLogcatFileLock.release()
+        with self._mLogcatFileLock:
+            if self.btSaveToFile.isChecked():
+                logcatPath = appModel.getLogcatFile("")
+                self._mLogcatFile.createFile(logcatPath, "utf-8")
+                if len(logcatPath) > 0:
+                    self._mNotifyWidget.notify(f"Write log into file:{logcatPath}", 2)
+            else:
+                logcatPath, traceCount = self._mLogcatFile.closeWrite()
+                if len(logcatPath) > 0:
+                    if traceCount > 0:
+                        self._mNotifyWidget.notify(f"Saved to file:{logcatPath}", 2)
+                    else:
+                        self._mNotifyWidget.notify(f"No record was saved to file:{logcatPath}", 2)
         return
 
     def _onClearLog(self):
@@ -346,7 +346,7 @@ class ViewLogcat(QWidget, Ui_Form):
             cols[3] = setting.showTID()
             cols[4] = setting.showLevel()
             cols[5] = setting.showTag()
-        tracerWidget.setColsVisual(cols)
+            tracerWidget.setColsVisual(cols)
         return
 
     def _onMark(self):
@@ -372,7 +372,8 @@ class ViewLogcat(QWidget, Ui_Form):
         filterMsg = self.editFilter.text()
         appModel.addRecentInput(filterMsg)
         Logger.i(appModel.getAppTag(), f"filter {filterMsg} begin")
-        self._mTracerWidget.setFilter(logInclude=filterMsg)
+        self._mTracerWidget.setFilter(logInclude=filterMsg, usingRegx=self.ckUsingRegx.isChecked())
+        appModel.saveConfig(self.__class__.__name__, f"FilterUsingRegx", self.ckUsingRegx.isChecked())
         Logger.i(appModel.getAppTag(), f"filter {filterMsg} end")
         return
 
@@ -428,6 +429,51 @@ class ViewLogcat(QWidget, Ui_Form):
         if self._mCurDevice is None:
             return
         self._mCurDevice.pushText(msg)
+        return
+
+    def _onBTClipperText(self):
+        Logger.i(appModel.getAppTag(), f"{self._mCurDevice}")
+        if self._mCurDevice is None:
+            return
+
+        # installed clipper.apk?
+        # download apk: https://github.com/majido/clipper/releases/download/v1.2.1/clipper.apk
+        # open it in device and set it to auto run
+        # call "adb shell am broadcast -a clipper.get" to get the clipper data
+
+        devID = self._mCurDevice.mID
+        apkName = "ca.zgrs.clipper"
+
+        # find clipper
+        clipperPackage: AndroidPackage = self._mCurDevice.findPackage(apkName)
+        if clipperPackage is None:
+            Logger.i(appModel.getAppTag(), f"{self._mCurDevice} will install clipper.apk first.")
+            # install it
+            clipperAPK = appModel.getExtToolsFile("android_clipper", "clipper.apk")
+            # clipperAPK = appModel.getExtToolsFile("android_clipper", "Clipper_v2.4.17.apk")
+            self._mCurDevice.installAPK(clipperAPK)
+            # find again
+            clipperPackage = self._mCurDevice.findPackage(apkName)
+            if clipperPackage is None:
+                Logger.e(appModel.getAppTag(), f"{self._mCurDevice} install clipper.apk failed.")
+                return
+
+        # open clipper
+        # processes = self._mCurDevice.getProcesses(clipperPackage.mUID)
+        # if len(processes) == 0:
+        adbReturn(devID, f"shell am start -n ca.zgrs.clipper/ca.zgrs.clipper.Main", True)
+
+        # call get clipper
+        clipperText = adbReturn(devID, f"shell am broadcast -a clipper.get", True)
+        if "Broadcast completed: result=0" in clipperText:
+            # try again
+            time.sleep(1)
+            clipperText = adbReturn(devID, f"shell am broadcast -a clipper.get", True)
+        qm = QMessageBox()
+        qm.information(self,
+                       f"Get clipper data from device",
+                       f"{clipperText}",
+                       qm.Ok)
         return
 
     def _onBTADBWifi(self):

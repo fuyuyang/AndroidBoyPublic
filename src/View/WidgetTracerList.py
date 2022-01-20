@@ -111,6 +111,7 @@ class WidgetTracerList(QWidget, Ui_Form):
         self._mFilterLogLevel = LoggerLevel.Verbose  # base filter
         self._mFilterLogInclude = ""
         self._mFilterLogExclude = ""
+        self._mFilterWithRegx = False
         self._mFilterMarkedOnly = False
 
         self._mAutoScrollToBottom = True
@@ -128,9 +129,11 @@ class WidgetTracerList(QWidget, Ui_Form):
         self.listTrace.horizontalScrollBar().setHidden(True)
         self.listTrace.horizontalScrollBar().setDisabled(True)
         self.listImportant.setWordWrap(True)
+        self.listNotice.setWordWrap(True)
         if self._mAddable:
             self.listBaseInfo.hide()
             self.listImportant.hide()
+            self.listNotice.hide()
 
         self._mLoading = False
         self._mAdding = False
@@ -157,6 +160,7 @@ class WidgetTracerList(QWidget, Ui_Form):
         self.listTrace.doubleClicked.connect(self._onDoubleClickLog)
 
         self.listImportant.doubleClicked.connect(self._onDoubleClickImportant)
+        self.listNotice.doubleClicked.connect(self._onDoubleClickNotice)
 
         self.btFindNext.clicked.connect(self.nextFind)
         self.btFindPrev.clicked.connect(self.prevFind)
@@ -276,6 +280,7 @@ class WidgetTracerList(QWidget, Ui_Form):
         else:
             markedOnly = menu.addAction("Marked only")
             noMarkedOnly = None
+        self.setFocus()
         action = menu.exec_(self.mapToGlobal(event.pos()))
 
         if action is None:
@@ -329,15 +334,14 @@ class WidgetTracerList(QWidget, Ui_Form):
 
     def clearLog(self, clearLines=True):
         Logger.i(appModel.getAppTag(), "")
-        self._mTracesModelLock.acquire()
-        self.listTrace.clear()
-        self._mLastReadLine = 0
-        self._mLastFilterRow = 0
-        self._mVisualCount = 0
-        if clearLines:
-            self._mAllTraceLines = []
-        self.lbStatus.clear()
-        self._mTracesModelLock.release()
+        with self._mTracesModelLock:
+            self.listTrace.clear()
+            self._mLastReadLine = 0
+            self._mLastFilterRow = 0
+            self._mVisualCount = 0
+            if clearLines:
+                self._mAllTraceLines = []
+            self.lbStatus.clear()
         return
 
     def _onDoubleClickLog(self, QModelIndex):
@@ -359,6 +363,15 @@ class WidgetTracerList(QWidget, Ui_Form):
         row = QModelIndex.row()
         Logger.i(appModel.getAppTag(), f"at {row}")
         traceItem: QListWidgetItem = self.listImportant.item(row).data(Qt.UserRole)
+
+        # self.setSelectRow(traceRow)
+        self.setSelectItem(traceItem)
+        return
+
+    def _onDoubleClickNotice(self, QModelIndex):
+        row = QModelIndex.row()
+        Logger.i(appModel.getAppTag(), f"at {row}")
+        traceItem: QListWidgetItem = self.listNotice.item(row).data(Qt.UserRole)
 
         # self.setSelectRow(traceRow)
         self.setSelectItem(traceItem)
@@ -437,19 +450,27 @@ class WidgetTracerList(QWidget, Ui_Form):
         Logger.i(appModel.getAppTag(), f"{self}, col={col}")
         return True
 
-    def setFilter(self, logLevel=None, logInclude=None, logExclude=None):
+    def setFilter(self, logLevel=None, logInclude=None, logExclude=None, usingRegx=None):
         if logLevel is None and logInclude is None and logExclude is None:
             return
 
-        self._mTracesModelLock.acquire()
-        if logLevel is not None:
-            self._mFilterLogLevel = logLevel
-        if logInclude is not None:
-            self._mFilterLogInclude = logInclude
-        if logExclude is not None:
-            self._mFilterLogExclude = logExclude
-        self._onFilterTraces(True)
-        self._mTracesModelLock.release()
+        with self._mTracesModelLock:
+            if usingRegx is None:
+                usingRegx = self._mFilterWithRegx
+            self._mFilterWithRegx = usingRegx
+            if logLevel is not None:
+                self._mFilterLogLevel = logLevel
+            if logInclude is not None:
+                if self._mFilterWithRegx:
+                    self._mFilterLogInclude = logInclude
+                else:
+                    self._mFilterLogInclude = logInclude.lower()
+            if logExclude is not None:
+                if self._mFilterWithRegx:
+                    self._mFilterLogExclude = logExclude
+                else:
+                    self._mFilterLogExclude = logExclude.lower()
+            self._onFilterTraces(True)
         return
 
     def _onEditorTextChanged(self, newText):
@@ -583,13 +604,12 @@ class WidgetTracerList(QWidget, Ui_Form):
         return
 
     def clearMark(self):
-        self._mTracesModelLock.acquire()
-        procTime = DateTimeHelper.ProcessTime()
-        count = self.listTrace.count()
-        for row in range(0, count):
-            trace: TracerLine = self.listTrace.item(row).data(Qt.UserRole)
-            trace.mMarked = False
-        self._mTracesModelLock.release()
+        with self._mTracesModelLock:
+            procTime = DateTimeHelper.ProcessTime()
+            count = self.listTrace.count()
+            for row in range(0, count):
+                trace: TracerLine = self.listTrace.item(row).data(Qt.UserRole)
+                trace.mMarked = False
         Logger.i(appModel.getAppTag(),
                  f"end with {count} "
                  f"in {procTime.getMicroseconds()} seconds ")
@@ -683,6 +703,8 @@ class WidgetTracerList(QWidget, Ui_Form):
         if not self._mAddable:
             errorDefinition = FileUtility.loadJsonFile(os.path.join(appModel.mAssetsPath, "WBTErrorDefinition.json"))
             errorDefinition = errorDefinition["errorDefinition"]
+            noticeMessage = FileUtility.loadJsonFile(os.path.join(appModel.mAssetsPath, "WBTNoticeMessage.json"))
+            noticeMessage = noticeMessage["noticeMessage"]
 
             procTime = DateTimeHelper.ProcessTime()
             endFind = self.listTrace.count()
@@ -699,6 +721,12 @@ class WidgetTracerList(QWidget, Ui_Form):
                         itemImportant = QListWidgetItem(value[0])
                         itemImportant.setData(Qt.UserRole, item)
                         self.listImportant.addItem(itemImportant)
+                        self.setItemMarked(item, True)
+                for key, value in noticeMessage.items():
+                    if key in trace.mMessage:
+                        itemNotice = QListWidgetItem(value[0])
+                        itemNotice.setData(Qt.UserRole, item)
+                        self.listNotice.addItem(itemNotice)
                         self.setItemMarked(item, True)
             Logger.i(appModel.getAppTag(), f"end with {endFind} in {procTime.getMicroseconds()}")
         return
@@ -871,8 +899,12 @@ class WidgetTracerList(QWidget, Ui_Form):
             trace.mVisual = trace.mMarked
             return
         # level or msg
-        hasFound = self._mFilterLogInclude.lower() in item.text().lower()
-        hasInTag = self._mFilterLogInclude.lower() in trace.mTag.lower()
+        if self._mFilterWithRegx:
+            hasFound = re.search(self._mFilterLogInclude, trace.getFullText(), flags=re.IGNORECASE)
+            hasInTag = False
+        else:
+            hasFound = self._mFilterLogInclude in trace.mMessage.lower()
+            hasInTag = self._mFilterLogInclude in trace.mTag.lower()
         if (not hasFound and not hasInTag) or trace.mLevel < self._mFilterLogLevel:
             trace.mVisual = False
         else:

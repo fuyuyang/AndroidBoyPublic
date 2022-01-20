@@ -1,11 +1,13 @@
 from typing import cast
 
-from PyQt5.QtCore import QRect, QObject, QEvent, Qt
+from PyQt5.QtCore import QRect, QObject, QEvent, Qt, QByteArray
 from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtWidgets import QDesktopWidget, QWidget, QListWidget, QListWidgetItem, QLineEdit, QPushButton, QTabWidget
+from PyQt5.QtWidgets import QDesktopWidget, QWidget, QListWidget, QListWidgetItem, QLineEdit, QPushButton, QTabWidget, \
+    QTreeWidget
 
 from src.Common import SystemHelper
 from src.Common.UITheme import uiTheme
+from src.Model.AppModel import appModel
 
 
 def getCenterOf(width, height, parent: QWidget):
@@ -30,6 +32,15 @@ def showLayout(layout, show):
         else:
             widget.hide()
     return
+
+
+def setEditorReadOnly(editor, readOnly: bool):
+    if readOnly:
+        editor.setReadOnly(True)
+        editor.setStyleSheet("color: grey")
+    else:
+        editor.setReadOnly(False)
+        editor.setStyleSheet("color: black")
 
 
 def enableLayout(layout, enable):
@@ -68,6 +79,41 @@ def switchMacUI(widget: QWidget):
     #     if type == "QPushButton":
     #         pass
     return
+
+
+def handleWndPos(wndObject: QObject, read: bool):
+    if read:
+        winGeometry = appModel.readConfig(wndObject.__class__.__name__, "winGeometry", None)
+        if winGeometry:
+            geo = QByteArray.fromBase64(bytes(winGeometry, "utf-8"))
+            wndObject.restoreGeometry(geo)
+        else:
+            cp = QDesktopWidget().availableGeometry()
+            width = 1024
+            height = 768
+            x = (cp.width() - width) / 2
+            y = (cp.height() - height) / 2
+            wndObject.setGeometry(int(x), int(y), int(width), int(height))
+            wndObject.update()
+    else:
+        geo = wndObject.saveGeometry()
+        geoStr = str(geo.toBase64().data(), encoding="utf-8")
+        appModel.saveConfig(wndObject.__class__.__name__, "winGeometry", geoStr)
+    return
+
+
+def getAllTreeItems(treeWidget: QTreeWidget):
+    def getSubtreeNodes(treeWidgetItem):
+        nodes = [treeWidgetItem]
+        for childIndex in range(treeWidgetItem.childCount()):
+            nodes.extend(getSubtreeNodes(treeWidgetItem.child(childIndex)))
+        return nodes
+
+    allItems = []
+    for topIndex in range(treeWidget.topLevelItemCount()):
+        topItem = treeWidget.topLevelItem(topIndex)
+        allItems.extend(getSubtreeNodes(topItem))
+    return allItems
 
 
 class ListForQLineEdit(QListWidget):

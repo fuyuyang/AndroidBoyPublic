@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/Users/weizlian/Desktop/MyPrj/github-repos/Python/AndroidBoyPublic/src/Layout/viewLogcat.ui'
+# Form implementation generated from reading ui file 'viewLogcat.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -78,6 +78,16 @@ class Ui_Form(object):
         self.btPushText.setMaximumSize(QtCore.QSize(16777215, 24))
         self.btPushText.setObjectName("btPushText")
         self.layoutDevices.addWidget(self.btPushText)
+        self.btClipperText = QtWidgets.QPushButton(Form)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.btClipperText.sizePolicy().hasHeightForWidth())
+        self.btClipperText.setSizePolicy(sizePolicy)
+        self.btClipperText.setMinimumSize(QtCore.QSize(0, 24))
+        self.btClipperText.setMaximumSize(QtCore.QSize(16777215, 24))
+        self.btClipperText.setObjectName("btClipperText")
+        self.layoutDevices.addWidget(self.btClipperText)
         self.btADBWifi = QtWidgets.QPushButton(Form)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -146,6 +156,9 @@ class Ui_Form(object):
         self.btFilter.setIcon(icon)
         self.btFilter.setObjectName("btFilter")
         self.layoutProcesses.addWidget(self.btFilter)
+        self.ckUsingRegx = QtWidgets.QCheckBox(Form)
+        self.ckUsingRegx.setObjectName("ckUsingRegx")
+        self.layoutProcesses.addWidget(self.ckUsingRegx)
         spacerItem6 = QtWidgets.QSpacerItem(40, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.layoutProcesses.addItem(spacerItem6)
         self.layoutView.addLayout(self.layoutProcesses)
@@ -326,8 +339,10 @@ class Ui_Form(object):
         Form.setWindowTitle(_translate("Form", "Form"))
         self.btInstallAPK.setText(_translate("Form", "Install APK"))
         self.btPushText.setText(_translate("Form", "Push text"))
+        self.btClipperText.setText(_translate("Form", "Clipper text"))
         self.btADBWifi.setText(_translate("Form", "ADB Wifi"))
         self.btFilter.setToolTip(_translate("Form", "Filter content"))
+        self.ckUsingRegx.setText(_translate("Form", "Regx"))
         self.btStop.setToolTip(_translate("Form", "Stop logcat"))
         self.btStart.setToolTip(_translate("Form", "Start logcat"))
         self.btSaveToFile.setToolTip(_translate("Form", "Save to file"))

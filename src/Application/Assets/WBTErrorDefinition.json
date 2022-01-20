@@ -124,10 +124,9 @@
       "invalid password",
       "join meeting"
     ],
-
-    "showErrorDialog errorNo=": [
-      "ErrorDialog shown",
-      "join meeting"
+    "errNo=31000": [
+      "get meeting list failed",
+      "in meeting"
     ]
   }
 }

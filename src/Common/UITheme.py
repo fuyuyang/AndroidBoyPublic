@@ -31,6 +31,15 @@ class UITheme:
         self.cmdOutputColor = QColor("black")
         self.cmdErrorColor = QColor("red")
 
+        self.iconStateError = None
+        self.iconStateNotExist = None
+        self.iconStateReady = None
+        self.iconStateRunning = None
+        self.iconStateStop = None
+        self.iconTools = None
+        self.iconAPKFile = None
+        self.iconSymbolFile = None
+        self.iconMappingFile = None
         self.iconClose = None
         self.iconCheck = None
         self.iconCopy = None
@@ -45,6 +54,8 @@ class UITheme:
         self.iconZoomOut = None
         self.iconRotateClockwise = None
         self.iconRotateAnticlockwise = None
+
+        self.iconWebex = None
 
         self.iconOutlook = None
         self.iconOutlookAccount = None
@@ -68,6 +79,15 @@ class UITheme:
         return
 
     def initRC(self):
+        self.iconStateError = QIcon(QPixmap(":/icon/icons/state_error.svg"))
+        self.iconStateNotExist = QIcon(QPixmap(":/icon/icons/state_not_exist.svg"))
+        self.iconStateReady = QIcon(QPixmap(":/icon/icons/state_ready.svg"))
+        self.iconStateRunning = QIcon(QPixmap(":/icon/icons/state_running.svg"))
+        self.iconStateStop = QIcon(QPixmap(":/icon/icons/state_stop.svg"))
+        self.iconTools = QIcon(QPixmap(":/icon/icons/tools.svg"))
+        self.iconAPKFile = QIcon(QPixmap(":/icon/icons/apk_file.svg"))
+        self.iconSymbolFile = QIcon(QPixmap(":/icon/icons/symbol_file.svg"))
+        self.iconMappingFile = QIcon(QPixmap(":/icon/icons/mapping_file.svg"))
         self.iconClose = QIcon(QPixmap(":/icon/icons/bt_close.svg"))
         self.iconCheck = QIcon(QPixmap(":/icon/icons/check.svg"))
         self.iconCopy = QIcon(QPixmap(":/icon/icons/copy.svg"))
@@ -82,6 +102,8 @@ class UITheme:
         self.iconZoomOut = QIcon(QPixmap(":/icon/icons/zoom_out.svg"))
         self.iconRotateClockwise = QIcon(QPixmap(":/icon/icons/rotate_clockwise.svg"))
         self.iconRotateAnticlockwise = QIcon(QPixmap(":/icon/icons/rotate_anticlockwise.svg"))
+
+        self.iconWebex = QIcon(QPixmap(":/icon/icons/webex.svg"))
 
         self.iconOutlook = QIcon(QPixmap(":/icon/icons/outlook.svg"))
         self.iconOutlookAccount = QIcon(QPixmap(":/icon/icons/outlook_account.svg"))

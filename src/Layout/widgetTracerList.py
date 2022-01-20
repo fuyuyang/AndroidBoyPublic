@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/Users/weizlian/Desktop/MyPrj/github-repos/Python/AndroidBoyPublic/src/Layout/widgetTracerList.ui'
+# Form implementation generated from reading ui file 'widgetTracerList.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -138,6 +138,16 @@ class Ui_Form(object):
         self.listImportant.setMaximumSize(QtCore.QSize(200, 16777215))
         self.listImportant.setObjectName("listImportant")
         self.verticalLayout_2.addWidget(self.listImportant)
+        self.listNotice = QtWidgets.QListWidget(Form)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.listNotice.sizePolicy().hasHeightForWidth())
+        self.listNotice.setSizePolicy(sizePolicy)
+        self.listNotice.setMinimumSize(QtCore.QSize(200, 0))
+        self.listNotice.setMaximumSize(QtCore.QSize(200, 16777215))
+        self.listNotice.setObjectName("listNotice")
+        self.verticalLayout_2.addWidget(self.listNotice)
         self.horizontalLayout.addLayout(self.verticalLayout_2)
         self.verticalLayout.addLayout(self.horizontalLayout)
         self.lbStatus = QtWidgets.QLabel(Form)

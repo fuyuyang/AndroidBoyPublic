@@ -31,13 +31,15 @@ class AnalyzerAction(IntEnum):
 class MailAnalyzer:
     sBaseSymbolFolder = ""
     sStopAnalyze = False
+    sVersionNumber = 10001
 
-    def __init__(self, mailItem: OutlookCtrl.EmailItem, errorDefinition: {}):
+    def __init__(self, mailItem: OutlookCtrl.EmailItem, errorDefinition: {}, noticeMessage: {}):
         self.mMailItem = mailItem
         self.mDumpFile = DumpFileHelper(None, "", "")
         self.mCustomerData = None
         self.mAnalyzeResult = {}
         self.mErrorDefinition = errorDefinition
+        self.mNoticeMessage = noticeMessage
         self.analyzeMail(False)
         return
 
@@ -49,6 +51,12 @@ class MailAnalyzer:
             self.mAnalyzeResult = {}
         else:
             self._readResult(emailFolder)
+            curVersion = 0
+            if "Version" in self.mAnalyzeResult:
+                curVersion = self.mAnalyzeResult["Version"]
+            if curVersion < MailAnalyzer.sVersionNumber:
+                self.mAnalyzeResult = {"Version": MailAnalyzer.sVersionNumber}
+                Logger.w(appModel.getAppTag(), f"recheck for version: {curVersion} < {MailAnalyzer.sVersionNumber}")
         if "BaseInfo" not in self.mAnalyzeResult:
             self._saveBaseInfo(self.mMailItem)
         if "Attachment" not in self.mAnalyzeResult:
@@ -62,6 +70,7 @@ class MailAnalyzer:
         # self._translateBody()
         self._handleDumpFile()
         self._handleKeyError()
+        self._handleNoticeMessage()
         self._handleTimezone()
 
         # set pointer
@@ -203,23 +212,23 @@ class MailAnalyzer:
                             continue
         return False
 
-    def _onCheckErrorInTrace(self, item: WBXTraceItemV3, param: [any]):
+    def _onCheckInTrace(self, item: WBXTraceItemV3, param: [any]):
         checkList: {} = param[0]
         if len(checkList) == 0:
             return False
-        for err, name in checkList.items():
+        for key, detail in checkList.items():
             if self.sStopAnalyze:
                 return False
-            if err in item.mMessage:
+            if key in item.mMessage:
                 # item.mPosInFile
-                self.mAnalyzeResult["KeyError"][err] = {
-                    "errName": name[0],
-                    "errType": name[1],
+                self.mAnalyzeResult[param[2]][key] = {
+                    "errName": detail[0],
+                    "errType": detail[1],
                     "logIndex": item.mIndex,
                     "logPos": item.mPosInFile,
                     "logFile": param[1],
                 }
-                del checkList[err]
+                del checkList[key]
                 return True
         return True
 
@@ -253,7 +262,7 @@ class MailAnalyzer:
                     self.mAnalyzeResult["KeyError"].update(json.loads(errDetail))
                 else:
                     tracerFile = WBXTracerFile(attachPath, True)
-                    if not tracerFile.readTraces(self._onCheckErrorInTrace, [needToCheck, attachPath]):
+                    if not tracerFile.readTraces(self._onCheckInTrace, [needToCheck, attachPath, "KeyError"]):
                         Logger.e(appModel.getAppTag(), f"readTrace from {attachPath} failed")
             elif re.search(r".zip$", attachPath, flags=re.IGNORECASE):
                 if not zipfile.is_zipfile(attachPath):
@@ -263,21 +272,86 @@ class MailAnalyzer:
                     if self.sStopAnalyze:
                         break
                     if re.search(r".wbt$", subFileName, flags=re.IGNORECASE):
-                        fileData = zipFile.read(subFileName)
-                        fullSubFileName = f"{attachPath}?{subFileName}"
-                        if WBXAnalyzer.isValid():
-                            errDetail = WBXAnalyzer.analyzeData(fileData, fullSubFileName)
-                            self.mAnalyzeResult["KeyError"].update(json.loads(errDetail))
-                        else:
-                            tracerFile = WBXTracerFile(fileData, False)
-                            if not tracerFile.readTraces(self._onCheckErrorInTrace, [needToCheck, fullSubFileName]):
-                                Logger.e(appModel.getAppTag(), f"readTrace from {fullSubFileName} failed")
+                        try:
+                            fileData = zipFile.read(subFileName)
+                            fullSubFileName = f"{attachPath}?{subFileName}"
+                            if WBXAnalyzer.isValid():
+                                errDetail = WBXAnalyzer.analyzeData(fileData, fullSubFileName)
+                                self.mAnalyzeResult["KeyError"].update(json.loads(errDetail))
+                            else:
+                                tracerFile = WBXTracerFile(fileData, False)
+                                if not tracerFile.readTraces(self._onCheckInTrace,
+                                                             [needToCheck, fullSubFileName, "KeyError"]):
+                                    Logger.e(appModel.getAppTag(), f"readTrace from {fullSubFileName} failed")
+                        except zipfile.BadZipFile as e:
+                            Logger.e(appModel.getAppTag(), f"zipFile.read {subFileName} exception: {e}")
                     else:
                         continue
         # set no error value as ""
         for err, name in self.mErrorDefinition.items():
             if err not in self.mAnalyzeResult["KeyError"]:
                 self.mAnalyzeResult["KeyError"][err] = {}
+        return True
+
+    def _handleNoticeMessage(self) -> bool:
+        recheck = appModel.readConfig(self.__class__.__name__, "recheck notice", False)
+        if "NoticeMessage" not in self.mAnalyzeResult or recheck:
+            self.mAnalyzeResult["NoticeMessage"] = {}
+        needToCheck = {}
+        for err, name in self.mNoticeMessage.items():
+            if err not in self.mAnalyzeResult["NoticeMessage"]:
+                needToCheck[err] = name
+        if len(needToCheck) == 0:
+            return True
+
+        if "Attachment" not in self.mAnalyzeResult:
+            return False
+
+        for attachPath in self.mAnalyzeResult["Attachment"]:
+            # every error only check 1 occur
+            needToCheck = {}
+            for err, name in self.mNoticeMessage.items():
+                if err not in self.mAnalyzeResult["NoticeMessage"]:
+                    needToCheck[err] = name
+            if len(needToCheck) == 0:
+                continue
+
+            WBXAnalyzer.setErrDefine(json.dumps(needToCheck))
+            if re.search(r".wbt$", attachPath, flags=re.IGNORECASE):
+                if WBXAnalyzer.isValid():
+                    errDetail = WBXAnalyzer.analyzeFile(attachPath)
+                    self.mAnalyzeResult["NoticeMessage"].update(json.loads(errDetail))
+                else:
+                    tracerFile = WBXTracerFile(attachPath, True)
+                    if not tracerFile.readTraces(self._onCheckInTrace, [needToCheck, attachPath, "NoticeMessage"]):
+                        Logger.e(appModel.getAppTag(), f"readTrace from {attachPath} failed")
+            elif re.search(r".zip$", attachPath, flags=re.IGNORECASE):
+                if not zipfile.is_zipfile(attachPath):
+                    continue
+                zipFile = zipfile.ZipFile(attachPath)
+                for subFileName in zipFile.namelist():
+                    if self.sStopAnalyze:
+                        break
+                    if re.search(r".wbt$", subFileName, flags=re.IGNORECASE):
+                        try:
+                            fileData = zipFile.read(subFileName)
+                            fullSubFileName = f"{attachPath}?{subFileName}"
+                            if WBXAnalyzer.isValid():
+                                errDetail = WBXAnalyzer.analyzeData(fileData, fullSubFileName)
+                                self.mAnalyzeResult["NoticeMessage"].update(json.loads(errDetail))
+                            else:
+                                tracerFile = WBXTracerFile(fileData, False)
+                                if not tracerFile.readTraces(self._onCheckInTrace,
+                                                             [needToCheck, fullSubFileName, "NoticeMessage"]):
+                                    Logger.e(appModel.getAppTag(), f"readTrace from {fullSubFileName} failed")
+                        except zipfile.BadZipFile as e:
+                            Logger.e(appModel.getAppTag(), f"zipFile.read {subFileName} exception: {e}")
+                    else:
+                        continue
+        # set no error value as ""
+        for notice, textColor in self.mNoticeMessage.items():
+            if notice not in self.mAnalyzeResult["NoticeMessage"]:
+                self.mAnalyzeResult["NoticeMessage"][notice] = {}
         return True
 
     def _handleTimezone(self) -> bool:
@@ -330,6 +404,13 @@ class MailAnalyzer:
                     else:
                         retString += errDetail["errName"]
                     retAction = AnalyzerAction.error
+        if "NoticeMessage" in self.mAnalyzeResult:
+            for notice, noticeDetail in self.mAnalyzeResult["NoticeMessage"].items():
+                if len(noticeDetail) > 0:
+                    if len(retString) > 0:
+                        retString += os.linesep + noticeDetail["errName"]
+                    else:
+                        retString += noticeDetail["errName"]
         if "DumpFile" in self.mAnalyzeResult:
             dumpState = self.mAnalyzeResult["DumpFile"]["state"]
             if DumpFileState.crashed.value == dumpState:

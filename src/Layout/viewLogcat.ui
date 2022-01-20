@@ -190,6 +190,31 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="btClipperText">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Clipper text</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="btADBWifi">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -386,6 +411,13 @@
          <property name="icon">
           <iconset resource="AndroidBoy.qrc">
            <normaloff>:/icon/icons/bt_fliter.svg</normaloff>:/icon/icons/bt_fliter.svg</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="ckUsingRegx">
+         <property name="text">
+          <string>Regx</string>
          </property>
         </widget>
        </item>
