@@ -22,6 +22,7 @@ on initParams(_fileName)
 				set my _filterFolder to ln as string
 			else if _indexParam = 3 then
 				dateObject from ln into my _filterStartDate
+				log "initParams _filterStartDate=" & my _filterStartDate & " ln=" & ln
 			else if _indexParam = 4 then
 				dateObject from ln into my _filterEndDate
 			else if _indexParam = 5 then
@@ -202,7 +203,7 @@ on generateMailInfo(_message, _dictFolder, _folderID)
 		set _senderAddress to _sender's address
 		
 		-- create temp folder for mail
-		set _mailTmpFolder to my createFolder(my _mailsFolder, _receivedTimeStr  & "_" & _senderAddress)
+		set _mailTmpFolder to my createFolder(my _mailsFolder, _receivedTimeStr & "_" & _senderAddress)
 		
 		set _dictMailInfo to {_id:_mailID, _folderID:_folderID, _subject:_message's subject, _senderName:_senderName, _senderEmail:_senderAddress, _receivedTime:_receivedTimeStr, _body:_message's plain text content}
 		set _dictAttachments to my appendAttachments(_message, _dictMailInfo, _mailTmpFolder)
@@ -272,7 +273,8 @@ to dateObject from theDateString into myDate
 	set {yr, Mnth, dy} to words of dateString
 	set the time of myDate to hrsMins
 	set the year of myDate to yr
-	set the month of myDate to Mnth
 	set the day of myDate to dy
+	set the month of myDate to Mnth
 	set text item delimiters to oti
+	log "StringToDate date=" & myDate & " str=" & theDateString
 end dateObject

@@ -12,6 +12,10 @@
       "no audio(31000006)",
       "audio"
     ],
+    "WBXAPPAPI command faild": [
+        "JMF WbxAppApi failed",
+        "join meeting"
+      ],
     "processJoinMeetingCommand, success=false": [
       "can't join meeting(processJoinMeetingCommand failure)",
       "join meeting"

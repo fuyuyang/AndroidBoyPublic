@@ -394,7 +394,7 @@ class ViewOutlookDetector(QWidget, Ui_Form):
             self.sEventOutlookState.emit(ActionType.readMailProgress, index, count, None)
             pass
         elif folder is not None:
-            Logger.d(appModel.getAppTag(), f"reading folder: {index}/{count}")
+            Logger.d(appModel.getAppTag(), f"reading folder: {folder.mName} - {index}/{count}")
             pass
         elif account is not None:
             Logger.d(appModel.getAppTag(), f"reading account: {account.mName} - {index}/{count}")

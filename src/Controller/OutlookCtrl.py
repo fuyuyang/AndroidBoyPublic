@@ -266,6 +266,7 @@ class OutlookCtrl:
             fw.close()
             asRead = applescript.run(scriptFile)
             os.remove(fw.name)
+            Logger.i(appModel.getAppTag(), f"run appleScript result={asRead.err}")
             accounts = json.loads(asRead.out)
             FileUtility.saveJsonFile(cacheFilePath, accounts)
 

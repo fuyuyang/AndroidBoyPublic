@@ -888,6 +888,7 @@ class WidgetTracerList(QWidget, Ui_Form):
         return
 
     def _setLineVisual(self, item: QListWidgetItem, trace: TracerLine):
+        item.mVisual = False
         if trace is None:
             return
         # always show marked item
@@ -909,6 +910,7 @@ class WidgetTracerList(QWidget, Ui_Form):
             trace.mVisual = False
         else:
             trace.mVisual = True
+            Logger.i(appModel.getAppTag(), f"_setLineVisual true {self._mFilterLogInclude} in {item.text()}")
 
         return
 
